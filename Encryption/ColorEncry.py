@@ -4,6 +4,7 @@ AUTHOR: LONGBEFER
 '''
 
 import numpy as np
+from Lorenz_ode45 import Lorenz_ode45
 
 # 导入本地文件
 # from NewColorEncry import 

@@ -1,8 +1,11 @@
 import numpy as np
-from Lorenz_ode45 import Lorenz_ode45
-from OurEncryLifting import OurEncryLifting
 
-def noColorEncry(img:np, key):
+# 本地文件
+from Lorenz_ode45 import Lorenz_ode45
+from OurDecryLifting import OurDecryLifting
+
+# 注：这里改为了noColorDecry
+def noColorDecry(img:np, key):
     '''
     对彩色图像使用提升方案加密
     '''
@@ -11,6 +14,7 @@ def noColorEncry(img:np, key):
     img = img.astype(np.float64)
     P = img.T.flatten()
 
+    # 混沌序列
     Sq = ChaoSq(key, s)
     Sq = Sq.astype(np.float64)
 
@@ -21,8 +25,8 @@ def noColorEncry(img:np, key):
     # [193,20,193,218,22,201,237,27,13,237,5,236]])
     # Sq = Sq.T
 
-    # 加密操作
-    C = OurEncryLifting(P, Sq[:, 0], Sq[:, 1], Sq[:, 2], Sq[:, 3])
+    # 解密操作
+    C = OurDecryLifting(P, Sq[:, 0], Sq[:, 1], Sq[:, 2], Sq[:, 3])
     C = C.reshape((z,w,h)).T
     C = C.astype(np.uint8)
     return C
