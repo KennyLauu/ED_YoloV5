@@ -17,7 +17,7 @@ def OurDecryLifting(T, S1, S2, S3, S4):
         D = np.flip(H)
 
         F = Update(B, C, S3[len(C) - 1])
-        G = Predict(C, H, S3)
+        G = Predict(C, F, S3)
         C = np.flip(G)
         B = np.flip(F)
 

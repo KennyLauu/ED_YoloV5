@@ -1,6 +1,4 @@
 import numpy as np
-
-# 本地文件
 from Lorenz_ode45 import Lorenz_ode45
 from OurDecryLifting import OurDecryLifting
 
@@ -60,4 +58,4 @@ def ChaoSq(x, s):
 #                 [[37,38,39],[40,41,42],[43,44,45],[46,47,48]]])
 # # img = np.random.randint(0, 256, size=[24,24,3])
 # key = np.array([21, 25, 42, 168])
-# noColorEncry(img, key)
+# noColorDecry(img, key)
