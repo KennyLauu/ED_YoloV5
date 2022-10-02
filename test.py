@@ -18,10 +18,10 @@ device = torch.device('cuda')
                            # data='D:/User/Documents/Github/yolov5/data/coco128.yaml')
 # model = DetectMultiBackend(weights='D:/User/Documents/Github/yolov5/weights/yolov5x-cls.pt',
 #                            data='D:/User/Documents/Github/yolov5/data/coco.yaml')
-model = DetectMultiBackend(weights='yolov5x.pt')#,
-                           # data='D:/User/Documents/Github/yolov5/data/coco.yaml')
+model = DetectMultiBackend(weights='Transfrom/ED_YoloV5/weights/yolov5x.pt',
+                           data='D:/User/Documents/Github/yolov5/data/coco.yaml')
 
-img_loc = ['./data/images/zidane.jpg']  # img_loc 可以是列表，或者元组
+img_loc = ['./Transfrom/ED_YoloV5/data/images/zidane.jpg']  # img_loc 可以是列表，或者元组
 dataset = LoadImages(img_loc)
 
 # 执行
