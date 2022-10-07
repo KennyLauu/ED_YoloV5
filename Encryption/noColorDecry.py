@@ -1,5 +1,16 @@
 import numpy as np
-from Lorenz_ode45 import Lorenz_ode45
+import sys
+from pathlib import Path
+import os
+
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[0]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
+ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
+
+
+from EncryUtils import Lorenz_ode45
 from OurDecryLifting import OurDecryLifting
 
 # 注：这里改为了noColorDecry
@@ -21,7 +32,12 @@ def noColorDecry(img:np, key):
     # [172,71, 84, 173, 157, 228, 180, 178, 47, 13, 46, 33],
     # [196, 243,50,141,167,190,168,215,73,178,6,150],
     # [193,20,193,218,22,201,237,27,13,237,5,236]])
+    # Sq = np.array([[225, 212, 166, 172, 33, 38, 192],
+    #                [182, 126, 195, 63, 31, 0, 241],
+    #                [178, 154, 151, 219, 24, 129, 197],
+    #                [173, 213, 162, 70, 66, 104, 221]])
     # Sq = Sq.T
+    
 
     # 解密操作
     C = OurDecryLifting(P, Sq[:, 0], Sq[:, 1], Sq[:, 2], Sq[:, 3])
@@ -56,6 +72,9 @@ def ChaoSq(x, s):
 #                 [[13,14,15],[16,17,18],[19,20,21],[22,23,24]],
 #                 [[25,26,27],[28,29,30],[31,32,33],[34,35,36]],
 #                 [[37,38,39],[40,41,42],[43,44,45],[46,47,48]]])
-# # img = np.random.randint(0, 256, size=[24,24,3])
+# img = np.array([[[1,2,3], [4,5,6], [7,8,9]], 
+#                 [[10,11,12], [13,14,15], [16,17,18]],
+#                 [[19,20,21], [22,23,24], [25,26,27]]])
+# # # img = np.random.randint(0, 256, size=[24,24,3])
 # key = np.array([21, 25, 42, 168])
 # noColorDecry(img, key)
