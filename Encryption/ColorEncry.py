@@ -2,12 +2,8 @@
 NOT USED - RESERVED    
 AUTHOR: LONGBEFER
 '''
-
 import numpy as np
-from Lorenz_ode45 import Lorenz_ode45
-
-# 导入本地文件
-# from NewColorEncry import 
+from EncryUtils import Lorenz_ode45, logistic
 
 def ColorEncry(img:np):
     '''
@@ -17,7 +13,6 @@ def ColorEncry(img:np):
     s = [w, h, z] # shape
     
     # 转换img为float64类型
-    print(img.dtype)
     img = img.astype(np.float64)
     
     Ball = Block(img[:,:,0])
@@ -48,8 +43,24 @@ def ColorEncry(img:np):
             n += 1
 
     # 加密操作
-    for v in range(0,3):
+    for v in range(0, 2):
+        j = 1
+        for i in range(0, 3):
+            # 注： 未完成
+            # Ball[Sbox[]] 
+            j = j + 4
+        # Ball[]
+
+    # 合并
+    for i in range(0, 2):
+        # Q[:, i] = merge()
         pass
+
+    C = np.zeros(w, h, 3)
+    # C[:, :, 0] = Q[:, 0]
+    # C[:, :, 1] = Q[:, 1]
+    # C[:, :, 2] = Q[:, 2]
+
 
 
 def Block(Bimg):

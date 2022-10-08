@@ -28,42 +28,42 @@ def OurEncryLifting(T, S1, S2, S3, S4):
         F = Update(B, G, S3[len(B) - 1])
         C, B = G, F
 
-    ES = merge(A, B, C, D)
+    ES = merge(D, C, B, A)
     return ES
 
 def Predict(P, Q:np, S):
     '''
     预测
     '''
+    # match dimension
     if len(P) > len(Q):
-        # ⚠ 注：这里可能有问题 超出索引
-        Q[len(P) - 1] = S[len(P) - 1]
-    elif len(P) == len(Q):
-        # ⚠ 注：这里可能有问题
-        Q = np.append(Q, Q[0])
-    else:
-        Q[len(P)] = Q[0]
+        Q = np.append(Q, S[len(P) - 1])
+    
+    # shift
+    A = np.zeros(P.shape)
+    A[:-1] = Q[1:len(P)] # 将Q向上移动
+    A[-1] = Q[0] 
 
-    for i in range(0,len(P)):
-        P[i] = np.bitwise_xor(int(P[i]), int(np.floor(0.5*(Q[i] + Q[i+1]))))
-
+    P = np.bitwise_xor(P.astype(np.uint8), np.floor(.5*(Q[:len(P)] + A)).astype(np.uint8))
     T = np.mod((P + S[0:len(P)]), 256)
+
     return T
 
 def Update(P, Q, S):
     '''
     更新
     '''
+    # match dimension
     if len(P) > len(Q):
-        # ⚠ 注：可能有问题 超出索引
-        Q[len(P) - 1] = S
+        Q = np.append(Q, S)
     
-    W, InitW, InitQ = [], 0, 0
-    W.append(np.mod(P[0] + np.floor(0.25*(InitQ + Q[0] + 2)) + InitW, 256))
+    W, InitW, InitQ = np.zeros(P.shape), 0, 0
+    
+    W[0] = np.mod(P[0] + np.floor(0.25*(InitQ + Q[0] + 2)) + InitW, 256)
     for i in range(1, len(P)):
-        W.append(np.mod(P[i] + np.floor(0.25*(Q[i-1] + Q[i] + 2)) + W[i-1], 256))
+        W[i] = np.mod(P[i] + np.floor(0.25*(Q[i-1] + Q[i] + 2)) + W[i-1], 256)
 
-    return np.array(W)
+    return W
 
 def merge(W, D, Y, C):
     '''
@@ -76,11 +76,13 @@ def merge(W, D, Y, C):
 
 def combine(A, B):
     if len(A) > len(B):
+        # ⚠ 注：未验证，可能有错误
         R = np.array([A[0:len(B)], B])
         R = R.T
         R = R.flatten()
         R = np.append(R, A[-1])
     elif len(A) < len(B):
+        # ⚠ 注：未验证，可能有错误
         R = np.array([A, B[0:len(A)]])
         R = R.T
         R = R.flatten()
