@@ -47,7 +47,7 @@ def ColorEncry(img:np):
         j = 1
         for i in range(0, 3):
             # 注： 未完成
-            # Ball[Sbox[]] 
+            # Ball[Sbox[]]
             j = j + 4
         # Ball[]
 

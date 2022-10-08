@@ -1,8 +1,9 @@
 # 加密/解密测试
 
 import numpy as np
-import cv2 
+import cv2
 import matplotlib.pyplot as plt
+# matplotlib==3.5.2
 
 from noColorDecry import noColorDecry
 from noColorEncry import noColorEncry
@@ -13,8 +14,8 @@ from EncryUtils import ProcessingKey
 # img = cv2.merge([r,g,b])
 
 # 原图
-img = plt.imread('D:/User/Documents/Code/Encryption/Transfrom/ED_YoloV5/data/images/bus.jpg')
-img = np.ascontiguousarray(img[0:223, 0:1, :])
+img = plt.imread('../data/images/bus.jpg')
+img = np.ascontiguousarray(img[0:223, 0:223, :])
 plt.imshow(img)
 plt.show()
 # img = cv2.imread('D:/User/Documents/Code/Encryption/Transfrom/ED_YoloV5/data/images/bus.jpg')

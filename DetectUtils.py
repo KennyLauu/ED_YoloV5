@@ -50,26 +50,12 @@ def DirectEncryption(xyxy, mask, key, fuison_image, name = 'object'):
     提取像素加密后嵌入原图（不判断是否检测框是否有相交）
     '''
     if mask != None:
-        # ------------------------------
-        ## ⚠ 错误处理（重大bug）
-        add_zero = False
-        if len(mask[mask == 1]) % 4 != 0:
-            add_zero = True
-        # ------------------------------
+        pass
 
         ## 选择mask加密区域，并转换为nx1x3维数组
 
         
     else:
-        # ------------------------------
-        ## ⚠ 错误处理（重大bug）
-        width = xyxy[2] - xyxy[0]
-        height = xyxy[3] - xyxy[1]
-        if width % 2 != 0:
-            xyxy[2] += 1
-        if height % 2 != 0:
-            xyxy[3] += 1
-        # ------------------------------ 
 
         ## 选择区域
         roi = np.ascontiguousarray(fuison_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :]) # w h c
@@ -98,12 +84,12 @@ def DirectEncryption(xyxy, mask, key, fuison_image, name = 'object'):
     
     return encryption_image, fuison_image
 
-def RoIEcryption(image, key, label:list|tuple = None, type='object', is_overlap:bool = False):
+def RoIEcryption(image, key, label = None, type='object', is_overlap:bool = False):
     '''
     image：原图 key：私钥 label：加密的类别 type：加密方式
     '''
     ## 检测输入内容
-    label = label if isinstance(label, list|tuple) else None if label == None else [label]
+    label = label if isinstance(label, list) else None if label == None else [label]
     type = type if type in ['object', 'segment'] else 'object'
 
     ## 返回检测结果
@@ -155,10 +141,10 @@ def initYOLOModel(task:str = 'object'):
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     ## YOLOv5模型
     model = DetectMultiBackend(weights='Transfrom/ED_YoloV5/weights/yolov5x.pt',
-                                data='D:/User/Documents/Github/yolov5/data/coco.yaml', device=device)
+                                data='./data/coco.yaml', device=device)
     return model
 
-def runModel(model:ClassificationModel|DetectionModel|SegmentationModel|AutoShape|DetectMultiBackend, 
+def runModel(model,
              image, type = 'object'):
     '''
     运行模型，返回执行结果

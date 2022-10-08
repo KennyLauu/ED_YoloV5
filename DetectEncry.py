@@ -16,7 +16,7 @@ from Encryption.EncryUtils import ProcessingKey
 
 # def DetectEncryption():
 
-img = 'D:/User/Documents/Code/Encryption/ROI chaotic image encryption based on lifting scheme and YOLOv5/images/person.jpg'
+img = './data/images/person.jpg'
 
 img = cv2.imread(img)
 cv2.imshow('plain image', img)
@@ -25,7 +25,7 @@ img = cv2whc(img) # 将cv2的 hwc bgr 转为 whc rgb
 
 key = ProcessingKey(img)
 
-# label = ['person', 'horse'] # 加密的类别
+label = ['person', 'horse'] # 加密的类别
 # 返回原图，加密+原图等
 result = RoIEcryption(img, key)
 
