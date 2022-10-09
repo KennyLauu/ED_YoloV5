@@ -56,7 +56,7 @@ def ChaoSq(x, s):
     L = 0.01
     T = SqN*L
     t = np.arange(L, T+L, L)
-    [_, xn] = Lorenz_ode45(t, x)
+    [_, xn] = Lorenz_ode45(t, x.astype(np.float64))
 
     # 未知原因，导致xn会多一行，暂时不修改
     A1 = np.mod(np.round(xn[200:SqN, 0]*(10**6)), 256)

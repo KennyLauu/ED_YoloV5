@@ -1,8 +1,7 @@
 import numpy as np
 import hashlib
 from scipy.integrate import solve_ivp
-from numbalsoda import lsoda, lsoda_sig, dop853
-from numba import njit, cfunc
+import numba
 
 def KeyGenerator(img):
     h = hashlib.sha256(img).hexdigest()
@@ -44,7 +43,7 @@ def logistic(x0, u, n):
     
     return np.array(x)
 
-@njit
+
 def Lorenz_ode45(t, x):
     '''
     LORENZ_ODE45 使用函数ode45直接求解微分方程
@@ -59,17 +58,14 @@ def Lorenz_ode45(t, x):
     
     # step = t[1] - t[0]
     # sol = solve_ivp(f_Lorenz, (min(t), max(t)), x, max_step=step, min_step=step)
-    # sol = solve_ivp(f_Lorenz, (np.min(t), np.max(t)), y0=x, t_eval=t)
-    # return [sol.t, sol.y.T]
-    funcptr = f_Lorenz.address
-    # x为key 4x1
-    # t为连续序列 图片大小
-    # y = np.zeros()
-    sol, success = lsoda(funcptr, x, t)
-    return t, sol.y
+    import time
+    start = time.time()
+    sol = solve_ivp(f_Lorenz, (np.min(t), np.max(t)), y0=x, t_eval=t)
+    print('solve ivp spend ', time.time() - start)
+    return [sol.t, sol.y.T]
 
 # 自定义f_Lorenz函数
-@cfunc(lsoda_sig)
+# @numba.jit(nopython=True)
 def f_Lorenz(t, x):
     dx = [0, 0, 0, 0]
     a, b, c, r = 10, 8/3, 28, -1.312

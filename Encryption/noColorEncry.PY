@@ -52,7 +52,7 @@ def ChaoSq(x, s):
     L = 0.01
     T = SqN*L
     t = np.arange(L, T+L, L)
-    [_, xn] = Lorenz_ode45(t, x)
+    [_, xn] = Lorenz_ode45(t, x.astype(np.float64))
 
     # 未知原因，导致xn会多一行，暂时不修改
     A1 = np.mod(np.round(xn[200:SqN, 0]*(10**6)), 256)
@@ -68,14 +68,14 @@ def ChaoSq(x, s):
 #                 [[13,14,15],[16,17,18],[19,20,21],[22,23,24]],
 #                 [[25,26,27],[28,29,30],[31,32,33],[34,35,36]],
 #                 [[37,38,39],[40,41,42],[43,44,45],[46,47,48]]])
-img = np.random.randint(0, 256, size=[720,1280,3])
+# img = np.random.randint(0, 256, size=[720,1280,3])
 # img = np.array([[[1,2,3], [4,5,6], [7,8,9]], 
 #                 [[10,11,12], [13,14,15], [16,17,18]],
 #                 [[19,20,21], [22,23,24], [25,26,27]]])
-key = np.array([21, 25, 42, 168])
-import time
-print('start')
-start = time.time()
-noColorEncry(img, key)
-end = time.time()
-print('end', end-start)
+# key = np.array([21, 25, 42, 168])
+# import time
+# print('start')
+# start = time.time()
+# noColorEncry(img, key)
+# end = time.time()
+# print('end', end-start)

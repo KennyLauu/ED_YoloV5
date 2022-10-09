@@ -45,6 +45,9 @@ for img_index, img in enumerate(imgs):
     if len(img.shape) == 3:
         img = img[None]  # expand for batch dim
 
+    # import torchsummary as summary
+    # summary.summary(model, img.shape[1:], img.shape[0])
+
     # for segment
     pred, proto = model(img)[:2]
     pred = non_max_suppression(pred, nm = 32)
@@ -68,8 +71,10 @@ for img_index, img in enumerate(imgs):
     masks = masks.cpu().numpy()
     masks = scale_image(masks.shape[:2], masks, org_img[img_index].shape)
     masks *= 255
-    cv2.imshow('masks', np.ascontiguousarray(masks[img_index]))
-    cv2.waitKey(0)
+
+    for cxk in range(masks.shape[2]):
+        cv2.imshow('masks', np.ascontiguousarray(masks[:, :, cxk:cxk+1]))
+        cv2.waitKey(0)
 
     # 对其中的每个结果进行操作
     for j, (*xyxy, conf, cls) in enumerate(det[:, :6]):

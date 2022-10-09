@@ -1,4 +1,5 @@
 import numpy as np
+import numba
 
 def OurEncryLifting(T, S1, S2, S3, S4):
     # LIFTING SCHEME INCYRPTION
@@ -49,6 +50,7 @@ def Predict(P, Q:np, S):
 
     return T
 
+@numba.jit(nopython=True)
 def Update(P, Q, S):
     '''
     更新
