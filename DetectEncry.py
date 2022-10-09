@@ -29,7 +29,8 @@ key = ProcessingKey(img)
 # label = ['person', 'horse'] # 加密的类别
 label = None
 # 返回原图，加密+原图等
-result = RoIEcryption(img, key, label)
+# encryption_object, fuison_image = RoIEcryption(img, key, label, type='segment')
+encryption_object, fuison_image = RoIEcryption(img, key, label, type='object')
 
-# plt.imshow(img)
-# plt.show()
+cv2.imshow('encryption image' ,cv2whc(fuison_image))
+cv2.waitKey(0)
