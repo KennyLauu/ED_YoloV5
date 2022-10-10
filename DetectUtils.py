@@ -1,4 +1,3 @@
-from unittest import result
 import numpy as np
 import cv2
 from Encryption.EncryUtils import ProcessingKey
@@ -54,16 +53,16 @@ def Overlap(xyxy, mask = None):
 
     return result, overlap_areas
 
-def OverlapEncryption(fuison_image, xyxy, key, overlap_areas, mask = None, name:str = 'object'):
+def OverlapEncryption(fusion_image, xyxy, key, overlap_areas, mask = None, name:str = 'object'):
     '''
     提取像素加密后嵌入原图（先判断是否检测框是否有相交）
     mask：全图的mask，若存在物体则标识为1，不存在物体标识为0；维度 w,h,1
     overlap_areas：存在相交部分，可以为boxes或者masks，但必须对应；存在相交为1，不存在为0
     '''
 
-    w, h, c = fuison_image.shape
+    w, h, c = fusion_image.shape
 
-    overlap_mask = np.ones(shape = fuison_image.shape, dtype=np.uint8)
+    overlap_mask = np.ones(shape = fusion_image.shape, dtype=np.uint8)
 
     ## 去除mask中的重叠部分
     if mask is not None:
@@ -86,16 +85,16 @@ def OverlapEncryption(fuison_image, xyxy, key, overlap_areas, mask = None, name:
             overlap_mask[int(overlap_box[0]):int(overlap_box[2]), int(overlap_box[1]):int(overlap_box[3]), :] = 0
         
     
-    return DirectEncryption(fuison_image, xyxy, key, overlap_mask, name)
+    return DirectEncryption(fusion_image, xyxy, key, overlap_mask, name)
 
-def DirectEncryption(fuison_image, xyxy, key, mask = None, name:str = 'object'):
+def DirectEncryption(fusion_image, xyxy, key, mask = None, name:str = 'object'):
     '''
     提取像素加密后嵌入原图（不判断是否检测框是否有相交）
-    对图像fuison_image的xyxy区域使用密钥key进行加密
+    对图像fusion_image的xyxy区域使用密钥key进行加密
     若包含mask，则可以传入mask，否则可以设为None，mask维度为原始图片(w,h,?)
     '''
 
-    w, h, c = fuison_image.shape
+    w, h, c = fusion_image.shape
 
     if mask is not None:
         ## 选择mask加密区域，并转换为nx1x3维数组
@@ -105,7 +104,7 @@ def DirectEncryption(fuison_image, xyxy, key, mask = None, name:str = 'object'):
             mask = mask.repeat(c, axis = 2) # 扩充mask w,h,c
         
         ## 选择区域
-        roi = np.ascontiguousarray(fuison_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :]) # w h c
+        roi = np.ascontiguousarray(fusion_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :]) # w h c
         # cv2.imshow(name+'need encryption', cv2whc(roi))
         # cv2.waitKey(0)
 
@@ -120,7 +119,7 @@ def DirectEncryption(fuison_image, xyxy, key, mask = None, name:str = 'object'):
         ## ------------------------------------------------------------
         ## 错误处理 （当需要加密的区域与其他区域完全重叠，且被其他区域加密时）
         if np.size(encryption_list) == 0:
-            return roi, roi_mask, fuison_image
+            return roi, roi_mask, fusion_image
         ## ------------------------------------------------------------
 
         ## 加密（将未相交的部分加密）
@@ -131,11 +130,11 @@ def DirectEncryption(fuison_image, xyxy, key, mask = None, name:str = 'object'):
         # cv2.waitKey(0)
 
         ## 加密图像与原图融合
-        fuison_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :] = roi
-        # cv2.imshow(name + 'fuison image', cv2whc(fuison_image))
+        fusion_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :] = roi
+        # cv2.imshow(name + 'fusion image', cv2whc(fusion_image))
         # cv2.waitKey(0)  
 
-        encryption_image = roi
+        encryption_image = roi * roi_mask
         mask = roi_mask
 
         ## 解密
@@ -147,13 +146,13 @@ def DirectEncryption(fuison_image, xyxy, key, mask = None, name:str = 'object'):
         # cv2.imshow(name+'decryption image', cv2whc(decryption_image))
         # cv2.waitKey(0)
 
-        # fuison_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :] = decryption_image
-        # cv2.imshow(name+'roi decryption', cv2whc(fuison_image))
+        # fusion_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :] = decryption_image
+        # cv2.imshow(name+'roi decryption', cv2whc(fusion_image))
         # cv2.waitKey(0)
         
     else:
         ## 选择区域
-        roi = np.ascontiguousarray(fuison_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :]) # w h c
+        roi = np.ascontiguousarray(fusion_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :]) # w h c
         # cv2.imshow(name, cv2whc(roi))
         # cv2.waitKey(0)
 
@@ -163,20 +162,24 @@ def DirectEncryption(fuison_image, xyxy, key, mask = None, name:str = 'object'):
         # cv2.waitKey(0)
 
         # 将加密图和原图融合
-        fuison_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :] = encryption_image.transpose((1,0,2))
-        # cv2.imshow(name+'roi encryption', cv2whc(fuison_image))
+        fusion_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :] = encryption_image.transpose((1,0,2))
+        # cv2.imshow(name+'roi encryption', cv2whc(fusion_image))
         # cv2.waitKey(0)
+
+        ## 创建mask
+        # mask = np.zeros(fusion_image.shape)
+        # mask[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :] = 1
 
         # 解密
         # decryption_image = noColorDecry(encryption_image, key)
         # cv2.imshow(name+'encryption', cv2whc(decryption_image))
         # cv2.waitKey(0)
 
-        # fuison_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :] = decryption_image
-        # cv2.imshow(name+'roi decryption', cv2whc(fuison_image))
+        # fusion_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :] = decryption_image
+        # cv2.imshow(name+'roi decryption', cv2whc(fusion_image))
         # cv2.waitKey(0)
     
-    return encryption_image, mask, fuison_image
+    return encryption_image, mask, fusion_image
 
 def RoIEcryption(image, key, label:list|tuple = None, type='object'):
     '''
@@ -196,7 +199,7 @@ def RoIEcryption(image, key, label:list|tuple = None, type='object'):
     # ------------
 
     encryption_object = []
-    fuison_image = image
+    fusion_image = image
 
     ## 对于每个检测出来的物体
     for obj in iter(result):
@@ -209,16 +212,53 @@ def RoIEcryption(image, key, label:list|tuple = None, type='object'):
 
         ## 重叠判定（若之前存在已加密的内容，则当前物体存在部分不需要加密）
         is_overlap, overlap_areas = Overlap(xyxy, mask)
-        encryption_image, mask, fuison_image = OverlapEncryption(fuison_image, xyxy, key, overlap_areas, mask, name) \
+        encryption_image, mask, fusion_image = OverlapEncryption(fusion_image, xyxy, key, overlap_areas, mask, name) \
                                                 if is_overlap else \
-                                                DirectEncryption(fuison_image, xyxy, key, mask, name)
+                                                DirectEncryption(fusion_image, xyxy, key, mask, name)
 
         ## 加密坐标
-        # DirectEncryption(xyxy, None, key, xyxy)
+        # xyxy = noColorEncry(xyxy, key)
 
         encryption_object.append([encryption_image, xyxy, mask])
 
-    return encryption_object, fuison_image
+    return encryption_object, fusion_image
+
+# ------------ Decryption -----------------
+
+def RoIDecryption(fusion_image, encryption_object, key):
+    for encry_obj in encryption_object:
+        _, xyxy, mask = encry_obj
+        encryption_image = fusion_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :]
+
+        # 解密坐标
+        # xyxy = noCollorDecry(xyxy, key)
+
+        if mask is not None:
+            decryption_list = encryption_image[mask == 1, np.newaxis] # nx1x3
+            decryption_list = np.hstack((decryption_list[::3], decryption_list[1::3], decryption_list[2::3])).reshape(-1, 1, 3)
+            decryption_result = noColorDecry(decryption_list, key)
+            encryption_image[mask == 1, np.newaxis] = decryption_result.reshape(-1, 1)
+            decryption_image = encryption_image
+            # cv2.imshow('decryption image', cv2whc(decryption_image))
+            # cv2.waitKey(0)
+
+            fusion_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :] = decryption_image
+            # cv2.imshow('roi decryption', cv2whc(fusion_image))
+            # cv2.waitKey(0)
+        else:
+
+            decryption_image = noColorDecry(encryption_image.transpose((1,0,2)), key)
+            # cv2.imshow('encryption', cv2whc(decryption_image))
+            # cv2.waitKey(0)
+
+            fusion_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :] = decryption_image
+            # cv2.imshow('roi decryption', cv2whc(fusion_image))
+            # cv2.waitKey(0)
+    
+    return fusion_image
+
+
+
 
 # ------------ YOLOv5 -----------------
 import torch
@@ -304,7 +344,6 @@ def runModel(model:ClassificationModel|DetectionModel|SegmentationModel|AutoShap
     
     return result
 
-
 def non_max_suppression(
         prediction,
         conf_thres=0.25,
@@ -312,7 +351,6 @@ def non_max_suppression(
         classes=None,
         agnostic=False,
         multi_label=False,
-        labels=(),
         max_det=300,
         nm=0,  # number of masks
 ):
@@ -347,22 +385,13 @@ def non_max_suppression(
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
         # x[((x[..., 2:4] < min_wh) | (x[..., 2:4] > max_wh)).any(1), 4] = 0  # width-height
-        x = x[xc[xi]]  # confidence
-
-        # Cat apriori labels if autolabelling
-        if labels and len(labels[xi]):
-            lb = labels[xi]
-            v = torch.zeros((len(lb), nc + nm + 5), device=x.device)
-            v[:, :4] = lb[:, 1:5]  # box
-            v[:, 4] = 1.0  # conf
-            v[range(len(lb)), lb[:, 0].long() + 5] = 1.0  # cls
-            x = torch.cat((x, v), 0)
+        x = x[xc[xi]]  # confidence 置信度数组 shape = (64, 117) 表示只有64个置信度大于conf_thres的物体，其中的117表示x,y,h,w,conf,80 cls,32 mask
 
         # If none remain process next image
-        if not x.shape[0]:
+        if not x.shape[0]: # 若全部置信度都比较低，可能是当前图片中不存在物体
             continue
 
-        # Compute conf
+        # Compute conf 目标置信度
         x[:, 5:] *= x[:, 4:5]  # conf = obj_conf * cls_conf
 
         # Box/Mask
@@ -374,15 +403,15 @@ def non_max_suppression(
             i, j = (x[:, 5:mi] > conf_thres).nonzero(as_tuple=False).T
             x = torch.cat((box[i], x[i, 5 + j, None], j[:, None].float(), mask[i]), 1)
         else:  # best class only
-            conf, j = x[:, 5:mi].max(1, keepdim=True)
-            x = torch.cat((box, conf, j.float(), mask), 1)[conf.view(-1) > conf_thres]
+            conf, j = x[:, 5:mi].max(1, keepdim=True) # 获取目标置信度最大的 conf和对应索引 shape = (64,1)
+            x = torch.cat((box, conf, j.float(), mask), 1)[conf.view(-1) > conf_thres] # 将80个类别化成了1个数字（类别对应的索引） shape=(60,38)，此时的xywh转为了xyxy
 
-        # Filter by class
+        # Filter by class （过滤掉不需要的类别，需要的类别存放在classes中，以数字形式）
         if classes is not None:
             x = x[(x[:, 5:6] == torch.tensor(classes, device=x.device)).any(1)]
 
         # Check shape
-        n = x.shape[0]  # number of boxes
+        n = x.shape[0]  # number of boxes （最后得到的可能包含物体的包围盒的数量）
         if not n:  # no boxes
             continue
         elif n > max_nms:  # excess boxes
@@ -392,17 +421,33 @@ def non_max_suppression(
 
         # Batched NMS
         c = x[:, 5:6] * (0 if agnostic else max_wh)  # classes
-        boxes, scores = x[:, :4] + c, x[:, 4]  # boxes (offset by class), scores
-        i = torchvision.ops.nms(boxes, scores, iou_thres)  # NMS 非极大值抑制
+        # boxes, scores = x[:, :4] + c, x[:, 4]  # boxes (offset by class), scores（不知道为什么要加上类别偏移）
+        # i = torchvision.ops.nms(boxes, scores, iou_thres)  # NMS 非极大值抑制（返回最优boxes的索引）
+        boxes, scores = x[:, :4], x[:, 4]
 
-        # 判断框是否相交
-        # 若相交，则判断
-        # boxes1, boxes2 = torch, torch
-        # torchvision.ops.box_iou(boxes1, boxes2)
+        boxes_num = boxes.shape[0] # 获取包围盒的数量
 
-        if i.shape[0] > max_det:  # limit detections
-            i = i[:max_det]
+        is_same_box = np.ones((boxes_num, ), dtype=np.int32) * -1 # 若不为-1则表示该物体和其数据对应的物体是同一个
 
-        output[xi] = x[i]
+        # 获取最大的boxes
+        for i in range(0, boxes_num):
+            if is_same_box[i] != -1: continue # 排除掉相同物体遍历
+            # is_same_box[i] = i # 做unique耗时，改为这个
+            lt = boxes[i][:2] # 第i个盒子的左上角坐标
+            rb = boxes[i][2:] # 第i个盒子的右下角坐标
+            for j in range(i + 1, boxes_num):
+                if is_same_box[j] != -1: continue 
+                bx1 = boxes[i].reshape((1, -1))
+                bx2 = boxes[j].reshape((1, -1))
+                iou = torchvision.ops.boxes.box_iou(bx1, bx2)
+                if iou > iou_thres: # 大于阈值，表示两个物体相交，且相交的范围较大（即可能为同一物体的可能性很大）
+                    # print(i, ' is same of ', j, ' with iou ', iou)
+                    lt = torch.min(lt, boxes[j][:2])
+                    rb = torch.max(rb, boxes[j][2:])
+                    is_same_box[j] = i
+            x[i, :4] = torch.tensor(([lt[0], lt[1], rb[0], rb[1]]), dtype=x.dtype)
+        
+        # 设置返回值
+        output[xi] = x[is_same_box == -1, :]
 
     return output

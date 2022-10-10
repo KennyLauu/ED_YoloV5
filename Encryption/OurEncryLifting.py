@@ -78,13 +78,11 @@ def merge(W, D, Y, C):
 
 def combine(A, B):
     if len(A) > len(B):
-        # ⚠ 注：未验证，可能有错误
         R = np.array([A[0:len(B)], B])
         R = R.T
         R = R.flatten()
         R = np.append(R, A[-1])
     elif len(A) < len(B):
-        # ⚠ 注：未验证，可能有错误
         R = np.array([A, B[0:len(A)]])
         R = R.T
         R = R.flatten()
