@@ -1,5 +1,6 @@
 import numpy as np
 
+
 # 注：这里我改为了OurDecryLifting
 def OurDecryLifting(T, S1, S2, S3, S4):
     # LIFTING SCHEME INCYRPTION
@@ -10,7 +11,7 @@ def OurDecryLifting(T, S1, S2, S3, S4):
     C = Q[1::2]
     D = Q[0::2]
 
-    for j in range(0,4):
+    for j in range(0, 4):
         H = Update(D, A, S4[len(D) - 1])
         E = Predict(A, H, S4)
         A = np.flip(E)
@@ -32,7 +33,8 @@ def OurDecryLifting(T, S1, S2, S3, S4):
     ES = merge(A, B, C, D)
     return ES
 
-def Predict(P, Q:np, S):
+
+def Predict(P, Q: np, S):
     '''
     预测
     '''
@@ -42,15 +44,16 @@ def Predict(P, Q:np, S):
     # match dimension
     if len(P) > len(Q):
         Q = np.append(Q, S[len(P) - 1])
-    
+
     # shift
     A = np.zeros(P.shape)
-    A[:-1] = Q[1:len(P)] # 将Q向上移动
-    A[-1] = Q[0] 
+    A[:-1] = Q[1:len(P)]  # 将Q向上移动
+    A[-1] = Q[0]
 
-    T = np.bitwise_xor(P.astype(np.uint8), np.floor(.5*(Q[:len(P)] + A)).astype(np.uint8))
-    
+    T = np.bitwise_xor(P.astype(np.uint8), np.floor(.5 * (Q[:len(P)] + A)).astype(np.uint8))
+
     return T
+
 
 def Update(P, Q, S):
     '''
@@ -59,13 +62,14 @@ def Update(P, Q, S):
     # match dimension
     if len(P) > len(Q):
         Q = np.append(Q, S)
-    
+
     W, InitP, InitQ = np.zeros(P.shape), 0, 0
 
-    W[0] = np.mod(P[0] - np.floor(0.25*(InitQ + Q[0] + 2)) - InitP, 256)
-    W[1:] = np.mod(P[1:] - np.floor(.25*(Q[:(len(P) - 1)] + Q[1:len(P)] + 2)) - P[:-1], 256)
+    W[0] = np.mod(P[0] - np.floor(0.25 * (InitQ + Q[0] + 2)) - InitP, 256)
+    W[1:] = np.mod(P[1:] - np.floor(.25 * (Q[:(len(P) - 1)] + Q[1:len(P)] + 2)) - P[:-1], 256)
 
     return W
+
 
 def merge(W, D, Y, C):
     '''
@@ -75,6 +79,7 @@ def merge(W, D, Y, C):
     G = combine(C, Y)
     Q = combine(G, F)
     return Q
+
 
 def combine(A, B):
     if len(A) > len(B):
@@ -91,5 +96,5 @@ def combine(A, B):
         R = np.array([A, B])
         R = R.T
         R = R.flatten()
-    
+
     return R

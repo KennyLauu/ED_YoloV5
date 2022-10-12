@@ -1,7 +1,10 @@
-import numpy as np
 import hashlib
-from scipy.integrate import solve_ivp
+
 import numba
+import numpy as np
+# from scipy.integrate import solve_ivp
+from numbalsoda import lsoda, lsoda_sig
+
 
 def KeyGenerator(img):
     h = hashlib.sha256(img).hexdigest()
@@ -10,7 +13,7 @@ def KeyGenerator(img):
     key = []
     for i in range(0, n):
         j = 2 * i
-        key.append(int(h[j:(j + 2)], 16)) #16进制转10进制
+        key.append(int(h[j:(j + 2)], 16))  # 16进制转10进制
 
     return np.array(key, dtype=np.int64)
 
@@ -21,11 +24,15 @@ def ProcessingKey(img):
     '''
     K = []
     key = KeyGenerator(img)
-    
-    K.append(np.mod((np.bitwise_xor(key[ 3], key[ 4]) + np.bitwise_xor(key[ 5], key[ 6]) + np.bitwise_xor(key[ 7], key[ 8]) + np.bitwise_xor(key[ 9], key[10])), 41))
-    K.append(np.mod((np.bitwise_xor(key[10], key[11]) + np.bitwise_xor(key[12], key[13]) + np.bitwise_xor(key[14], key[15]) + np.bitwise_xor(key[16], key[17])), 41))
-    K.append(np.mod((np.bitwise_xor(key[17], key[18]) + np.bitwise_xor(key[19], key[20]) + np.bitwise_xor(key[21], key[22]) + np.bitwise_xor(key[23], key[24])), 80) + 1)
-    K.append(np.mod((np.bitwise_xor(key[24], key[25]) + np.bitwise_xor(key[26], key[27]) + np.bitwise_xor(key[28], key[29]) + np.bitwise_xor(key[30], key[31])), 251))
+
+    K.append(np.mod((np.bitwise_xor(key[3], key[4]) + np.bitwise_xor(key[5], key[6]) + np.bitwise_xor(key[7], key[
+        8]) + np.bitwise_xor(key[9], key[10])), 41))
+    K.append(np.mod((np.bitwise_xor(key[10], key[11]) + np.bitwise_xor(key[12], key[13]) + np.bitwise_xor(key[14], key[
+        15]) + np.bitwise_xor(key[16], key[17])), 41))
+    K.append(np.mod((np.bitwise_xor(key[17], key[18]) + np.bitwise_xor(key[19], key[20]) + np.bitwise_xor(key[21], key[
+        22]) + np.bitwise_xor(key[23], key[24])), 80) + 1)
+    K.append(np.mod((np.bitwise_xor(key[24], key[25]) + np.bitwise_xor(key[26], key[27]) + np.bitwise_xor(key[28], key[
+        29]) + np.bitwise_xor(key[30], key[31])), 251))
 
     return np.array(K)
 
@@ -40,7 +47,7 @@ def logistic(x0, u, n):
     x[0] = x0
     for i in range(1, n):
         x[i] = u * x[i - 1] * (1 - x[i - 1])
-    
+
     return np.array(x)
 
 
@@ -55,22 +62,34 @@ def Lorenz_ode45(t, x):
     '''
 
     # [tn, xn] = ode45(f_Lorenz, t, x)
-    
+
     # step = t[1] - t[0]
     # sol = solve_ivp(f_Lorenz, (min(t), max(t)), x, max_step=step, min_step=step)
-    import time
-    start = time.time()
-    sol = solve_ivp(f_Lorenz, (np.min(t), np.max(t)), y0=x, t_eval=t)
-    print('solve ivp spend ', time.time() - start)
-    return [sol.t, sol.y.T]
+    # import time
+    # sol = solve_ivp(f_Lorenz, (np.min(t), np.max(t)), y0=x, t_eval=t)
+    funcptr = f.address
+    data = np.array([10, 8 / 3, 28, -1.312])
+    # start = time.time()
+    sol, success = lsoda(funcptr, x, t, data=data, rtol=1.e-8, atol=1.e-8)
+    # print('solve ivp spend ', time.time() - start)
+    assert success
+    return [t, sol]
+    # return [sol.t, sol.y.T]
+
 
 # 自定义f_Lorenz函数
 # @numba.jit(nopython=True)
-def f_Lorenz(t, x):
-    dx = [0, 0, 0, 0]
-    a, b, c, r = 10, 8/3, 28, -1.312
-    dx[0] = a*(x[1] - x[0]) + x[3]
-    dx[1] = c*x[0] - x[1] - x[0]*x[2]
-    dx[2] = x[0]*x[1] - b*x[2]
-    dx[3] = -x[1]*x[2] + r*x[3]
-    return dx
+# def f_Lorenz(t, x):
+#     dx = [0, 0, 0, 0]
+#     a, b, c, r = 10, 8/3, 28, -1.312
+#     dx[0] = a*(x[1] - x[0]) + x[3]
+#     dx[1] = c*x[0] - x[1] - x[0]*x[2]
+#     dx[2] = x[0]*x[1] - b*x[2]
+#     dx[3] = -x[1]*x[2] + r*x[3]
+#     return dx
+@numba.cfunc(lsoda_sig)
+def f(t, u, du, p):
+    du[0] = p[0] * (u[1] - u[0]) + u[3]
+    du[1] = p[2] * u[0] - u[1] - u[0] * u[2]
+    du[2] = u[0] * u[1] - p[1] * u[2]
+    du[3] = -u[1] * u[2] + p[3] * u[3]

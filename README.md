@@ -14,7 +14,8 @@ python ./DetectEncry.py
 
 If you need the latest code, you could switch the branch by `git swithch dev`  
 
-> Please modified the location of image in code while you running this code. 
+> Please modified the location of image in code while you running this code.
+> And Remember to download weight file in github, put it in weights/*
 
 ## Note  
 
