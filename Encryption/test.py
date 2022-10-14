@@ -4,20 +4,25 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 # matplotlib==3.5.2
+import time
+from PIL import Image
 
 from noColorDecry import noColorDecry
 from noColorEncry import noColorEncry
 from EncryUtils import ProcessingKey
+from DetectUtils import cv2whc
 
-# img = cv2.imread('D:/User/Documents/Code/Encryption/Transfrom/ED_YoloV5/data/images/bus.jpg', cv2.IMREAD_COLOR) # 读图片，忽略alpha通道
-# b,g,r = cv2.split(img)
-# img = cv2.merge([r,g,b])
+#
+# plt.axis('off')
+# plt.xticks([])
+# plt.yticks([])
 
 # 原图
-img = plt.imread('../data/images/bus.jpg')
-img = np.ascontiguousarray(img[0:223, 0:223, :])
-plt.imshow(img)
-plt.show()
+# plt.title('source image')
+img = plt.imread('../data/images/person.jpg')
+# img = np.ascontiguousarray(img[:, :, :])
+# plt.imshow(img)
+# plt.show()
 # img = cv2.imread('D:/User/Documents/Code/Encryption/Transfrom/ED_YoloV5/data/images/bus.jpg')
 # img = np.ascontiguousarray(img[0:200, 0:200, :])
 # cv2.imshow('title', img)
@@ -25,25 +30,39 @@ plt.show()
 
 # 私钥
 key = ProcessingKey(img)
-keyd = [39, 16, 78, 6]
-keyc = [39, 16, 77, 7]
-
+# print(key)
+start = time.time()
 # 加密图像
 print('加密')
 EncryImg = noColorEncry(img, key)
-plt.imshow(EncryImg)
-plt.title('encryption')
-plt.show()
+# plt.imshow(EncryImg.transpose(1, 0 ,2))
+# plt.title('encryption')
+# cv2.imshow('', cv2whc(EncryImg))
+# cv2.waitKey(0)
+# img = Image.fromarray(EncryImg)
+# img.save('encryImg.png')
 
+# EncryImg = cv2.imread('encryImg.png')
+
+end = time.time()
+print('加密所需时间 %f' % (end - start))
+
+start = time.time()
 # 解密图像
 print('解密')
-DecryImg = noColorDecry(EncryImg, key)
-plt.imshow(DecryImg)
-plt.title('decryption')
-plt.show()
+DecryImg = noColorDecry(cv2whc(EncryImg).transpose([1, 0, 2]), np.array([7, 19, 32, 106]))
+# plt.imshow(DecryImg)
+# plt.title('decryption')
+# plt.axis('off')
+# plt.xticks([])
+# plt.yticks([])
+# cv2.imshow('Decryption', cv2whc(DecryImg))
+# cv2.waitKey(0)
+end = time.time()
+print('解密所需时间 %f' % (end - start))
 
 # 比较原图与解密图的差异
-gap = np.abs(DecryImg - img)
-plt.imshow(gap)
-plt.show()
-print('差异', max(gap.flatten()))
+# gap = np.abs(DecryImg - img)
+# plt.imshow(gap)
+# plt.show()
+# print('差异', max(gap.flatten()))

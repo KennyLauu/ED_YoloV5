@@ -16,7 +16,7 @@ from Encryption.EncryUtils import ProcessingKey
 
 # def DetectEncryption():
 
-img = 'D:/User/Documents/Code/Encryption/ROI chaotic image encryption based on lifting scheme and YOLOv5/images/person.jpg'
+img = 'D:\Project\Github\ED_YoloV5\data\images\person.jpg'
 
 img = cv2.imread(img)
 cv2.imshow('plain image', img)
@@ -30,7 +30,7 @@ label = None
 
 # 返回原图，加密+原图等
 encryption_object, fusion_image = RoIEcryption(img, key, label, detect_type='segment')
-# encryption_object, fusion_image = RoIEcryption(img, key, label, type='object')
+# encryption_object, fusion_image = RoIEcryption(img, key, label, 'object')
 cv2.imshow('encryption image', cv2whc(fusion_image))
 cv2.waitKey(0)
 # cv2.imwrite('segment_result_dog.jpg', cv2whc(fusion_image))
