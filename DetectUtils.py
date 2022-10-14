@@ -50,10 +50,10 @@ def Overlap(xyxy, mask=None):
     else:
         # 只进行包围盒预测
         for obj_box in stack:
-            x1 = torch.max(obj_box[0], xyxy[0])
-            x2 = torch.min(obj_box[2], xyxy[2])
-            y1 = torch.max(obj_box[1], xyxy[1])
-            y2 = torch.min(obj_box[3], xyxy[3])
+            x1 = max(obj_box[0], xyxy[0])
+            x2 = min(obj_box[2], xyxy[2])
+            y1 = max(obj_box[1], xyxy[1])
+            y2 = min(obj_box[3], xyxy[3])
 
             if (x2 - x1) * (y2 - y1) > 0:
                 result = True
@@ -209,7 +209,7 @@ def DirectEncryption(fusion_image, xyxy, key, mask=None, name: str = 'object'):
         # cv2.waitKey(0)
 
         # 将加密图和原图融合
-        fusion_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :] = encryption_image.transpose((1, 0, 2))
+        fusion_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :] = encryption_image
         # cv2.imshow(name+'roi encryption', cv2whc(fusion_image))
         # cv2.waitKey(0)
 
@@ -229,7 +229,7 @@ def DirectEncryption(fusion_image, xyxy, key, mask=None, name: str = 'object'):
     return encryption_image, mask, fusion_image
 
 
-def RoIEcryption(image, key, label: list = None, detect_type='object'):
+def RoIEncryption(image, key, label: list = None, detect_type='object'):
     """
     image：原图 key：私钥 label：加密的类别 detect_type：加密方式
 
@@ -253,9 +253,13 @@ def RoIEcryption(image, key, label: list = None, detect_type='object'):
     label = label if type(label) in [list, tuple] else None if label is None else [label]
     detect_type = detect_type if detect_type in ['object', 'segment'] else 'object'
 
+    import time
+    start = time.time()
     # 返回检测结果
     model = initYOLOModel(detect_type)
-    result = runModel(model, cv2whc(image), detect_type)  # 由于runModel是处理cv的，故这里转回cv
+    result, _ = runModel(model, cv2whc(image), detect_type)  # 由于runModel是处理cv的，故这里转回cv
+    end = time.time()
+    print('run yolo spend: ', end - start)
 
     # ------------
     # 全局操作
@@ -281,7 +285,10 @@ def RoIEcryption(image, key, label: list = None, detect_type='object'):
             DirectEncryption(fusion_image, xyxy, key, mask, name)
 
         # 加密坐标
-        # xyxy = noColorEncry(xyxy, key)
+        # pos_list = np.array(xyxy, ndmin=3).reshape(-1, 1, 1)  # 4x1x1
+        # print('encryption position before: ', pos_list)
+        # encryption_position = noColorEncry(pos_list, key)
+        # print('encryption position after: ', encryption_position)
 
         encryption_object.append([encryption_image, xyxy, mask])
 
@@ -302,7 +309,10 @@ def SelectAreaEcryption(image, xyxy, key):
         DirectEncryption(fusion_image, xyxy, key)
 
     # 加密坐标
-    # xyxy = noColorEncry(xyxy, key)
+    # pos_list = np.array(xyxy, ndmin=3).reshape(-1, 1, 1)  # 4x1x1
+    # print('encryption position before: ', pos_list)
+    # encryption_position = noColorEncry(pos_list, key)
+    # print('encryption position after: ', encryption_position)
 
     encryption_object.append([encryption_image, xyxy, mask])
 
@@ -326,10 +336,13 @@ def RoIDecryption(fusion_image, encryption_object, key):
     """
     for encry_obj in encryption_object:
         _, xyxy, mask = encry_obj
-        encryption_image = fusion_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :]
 
         # 解密坐标
-        # xyxy = noColorDecry(xyxy, key)
+        # decryption_position = noColorDecry(encryption_position, key)
+        # xyxy = [val for val in decryption_position]
+        # print('decryption position', xyxy)
+
+        encryption_image = fusion_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :]
 
         if mask is not None:
             decryption_list = encryption_image[mask == 1, np.newaxis]  # nx1x3
@@ -354,7 +367,7 @@ def RoIDecryption(fusion_image, encryption_object, key):
             # cv2.waitKey(0)
         else:
 
-            decryption_image = noColorDecry(encryption_image.transpose((1, 0, 2)), key)
+            decryption_image = noColorDecry(encryption_image, key)
             # cv2.imshow('encryption', cv2whc(decryption_image))
             # cv2.waitKey(0)
 
@@ -448,27 +461,39 @@ def runModel(model, image, detect_type='object'):
         det[:, :4] = scale_boxes(img.shape[2:], det[:, :4], image.copy().shape).round()
         # 获取每个对象的坐标等结果
         for j, (*xyxy, conf, cls) in enumerate(det[:, :6]):
+            xyxy = [pos.cpu().numpy() for pos in xyxy]
+            conf = conf.cpu().numpy()
             if masks is not None:
                 result.append([xyxy, conf, cls, cv2whc(masks[:, :, j:j + 1])])
             else:
                 result.append([xyxy, conf, cls, None])
 
-    return result
+    return result, det
 
 
 def show_detection_result(image, detect_type: str = 'object'):
     model = initYOLOModel(detect_type)
-    result = runModel(model, cv2whc(image), detect_type)  # 由于runModel是处理cv的，故这里转回cv
+    result, prediction_matrix = runModel(model, cv2whc(image), detect_type)
 
-    import cv2
+    # import cv2
 
-    for obj in iter(result):
+    # 获取所有标签
+    confs = prediction_matrix[:, 4:5]
+
+    # names 标签中可能包含 ['0: person', '1: person', '2: tie', '3: tie']
+    names = [str(i) + ': ' + model.names[val] for i, val in enumerate(prediction_matrix[:, 5:6])]
+
+    # 对包装好的单个内容进行显示
+    for i, obj in enumerate(result):
         # 解包内容
         xyxy, conf, cls, mask = obj
-        name = model.names[int(cls)]
+        name = str(i) + ': ' + model.names[int(cls)]
 
-        cv2.imshow(name, cv2whc(image[xyxy[0]:xyxy[2], xyxy[1]:xyxy[3]]))
-        cv2.waitKey(0)
+        if name not in names:
+            continue
+
+        # cv2.imshow(name, cv2whc(image[xyxy[0]:xyxy[2], xyxy[1]:xyxy[3]]))
+        # cv2.waitKey(0)
 
 
 def non_max_suppression(

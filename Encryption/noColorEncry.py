@@ -27,7 +27,7 @@ def noColorEncry(img: np, key):
 
     # 加密操作
     C = OurEncryLifting(P, Sq[:, 0], Sq[:, 1], Sq[:, 2], Sq[:, 3])
-    C = C.reshape((z, w, h)).T
+    C = C.reshape((z, h, w)).T
     C = C.astype(np.uint8)
     return C
 
