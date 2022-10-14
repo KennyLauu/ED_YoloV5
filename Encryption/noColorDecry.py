@@ -29,7 +29,7 @@ def noColorDecry(img: np, key):
 
     # 解密操作
     C = OurDecryLifting(P, Sq[:, 0], Sq[:, 1], Sq[:, 2], Sq[:, 3])
-    C = C.reshape((z, w, h)).T
+    C = C.reshape((z, h, w)).T
     C = C.astype(np.uint8)
     return C
 
