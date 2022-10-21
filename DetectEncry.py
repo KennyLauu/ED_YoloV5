@@ -19,8 +19,8 @@ from Encryption.EncryUtils import ProcessingKey
 
 # img = 'D:/User/Pictures/学习/深度学习/微信图片_20221010172412.jpg'
 # img = 'D:/User/Documents/Code/Encryption/ROI chaotic image encryption based on lifting scheme and YOLOv5/images/dog.jpg'
-img = 'D:/User/Documents/Code/Encryption/ROI chaotic image encryption based on lifting scheme and YOLOv5/images/person.jpg'
-# img = './data/images/zidane.jpg'
+# img = 'D:/User/Documents/Code/Encryption/ROI chaotic image encryption based on lifting scheme and YOLOv5/images/person.jpg'
+img = './data/images/zidane.jpg'
 # img = './data/images/bus.jpg'
 
 img = cv2.imread(img)

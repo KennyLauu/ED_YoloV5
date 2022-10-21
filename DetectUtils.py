@@ -13,6 +13,147 @@ def cv2whc(img):
     """
     return np.ascontiguousarray(img.transpose((1, 0, 2))[:, :, ::-1])
 
+def text2key(text):
+    """
+    需要传入解密密钥，格式为 'a,b,c,d' 字符串或者列表 [a,b,c,d]
+    """
+    text = str.split(text, ',') if isinstance(text, str) else text 
+
+    assert isinstance(text, list), 'error text type, must be str or list'
+    assert len(text) == 4, 'error dimension, must be 4-dimension, shape=(4,)'
+
+    # 将字符转换为数字
+    text = np.array([int(val) for val in text])
+    return text
+
+def bytes2string(data:bytes):
+    return data.decode('ascii')
+
+def bytes2int(data:bytes):
+    return int(bytes2string(data))
+
+def get_wh(data:bytes):
+    w_h_list = data.split(b',')
+    return bytes2int(w_h_list[0]), bytes2int(w_h_list[1])
+
+def get_xyxy(data:bytes):
+    xyxy_list = data.split(b',')
+    return [bytes2int(xyxy_list[0]),
+            bytes2int(xyxy_list[1]),
+            bytes2int(xyxy_list[2]),
+            bytes2int(xyxy_list[3])]
+
+def bytes2numpy(data:bytes):
+    return np.frombuffer(data, dtype=np.uint8)
+
+def get_object(data:bytes):
+    object_list = data.split(b'],')
+    encryption_object = []
+    for obj in object_list[:-1]:
+        combine_list = obj.split(b'|')
+        xyxy = get_xyxy(combine_list[0][1:])
+        if combine_list[1] != b' ':
+            mask = bytes2numpy(combine_list[1])
+        else: mask = None
+        encryption_object.append([xyxy, mask])
+    return encryption_object
+
+_unpack_function_ = {b'method':bytes2string, b'shape':get_wh,
+                   b'object_number':bytes2int, b'object':get_object}
+
+def SetEncryptionImage(image_path, encryption_object, encryption_method:str = 'object', image_array:np = None):
+    """
+    Write Some Tip for Encryption Image
+    """
+    w,h,c = 0,0,0
+    if image_array is not None:
+        w,h,c = image_array.shape
+
+    is_encryption = False
+
+    with open(image_path, mode='rb+') as binary_img:
+        binary_img.seek(-14, 2) # 获取最后四个字节
+
+        encryption_info_aready = binary_img.readlines()[-1]
+        
+        # 已加密则取消继续加密
+        if b'encryption_end' in encryption_info_aready:
+            is_encryption = True
+
+    if is_encryption == False:
+        # 加密的文件头，包含加密方式，图片宽高，加密物体的数量
+        with open(image_path, mode='ab') as binary_img:
+            encryption_info = 'method:{};shape:{},{};object_number:{};object:'.format(
+                encryption_method, w, h, len(encryption_object)
+            )
+            binary_img.write(encryption_info.encode('ascii'))
+
+            # 添加每个物体
+            for _ ,xyxy, mask in encryption_object:
+                encryption_object_info = '[{},{},{},{}|'.format(
+                    int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3])
+                )
+                encryption_object_info_bytes = encryption_object_info.encode('ascii')
+                encryption_object_info_bytes += mask[:,:,0:1].tobytes() if mask is not None else b' '
+                encryption_object_info_bytes += b'],'
+                binary_img.write(encryption_object_info_bytes)
+
+            encryption_info = ';'
+            encryption_info += 'encryption_end'
+            binary_img.write(encryption_info.encode('ascii'))
+    
+
+def GetEncryptionImageInfo(image_path):
+    with open(image_path, mode='rb') as binary_img:
+        # 获取最后一行
+        encryption_info_bytes = binary_img.read()
+        encryption_info_start_index = encryption_info_bytes.find(b'method:')
+        encryption_info_bytes = encryption_info_bytes[encryption_info_start_index:]
+
+        # 获取需要的内容
+        encryption_info_split_list = encryption_info_bytes.split(b';')
+
+        encryption_info = {}
+
+        for info in encryption_info_split_list:
+            data_list = info.split(b':')
+            if len(data_list) == 2:
+                command, data = data_list
+                encryption_info[bytes2string(command)] = _unpack_function_[command](data)
+                print(bytes2string(command), ': ', encryption_info[bytes2string(command)], '\n')
+
+        return encryption_info
+
+
+def EncryptionImage2Decryption(image_path, key):
+    # 将字符串key转为np
+    key = text2key(key) if isinstance(key, str) else key
+    # 获取图片中的掩码
+    encryption_info = GetEncryptionImageInfo(image_path)
+    encryption_objects = encryption_info['object']
+
+    import cv2
+    # 使用cv2读取图片
+    fusion_image = cv2whc(cv2.imread(image_path))
+    img_w, img_h, c = fusion_image.shape 
+
+    encryption_object = []
+    
+    for obj in encryption_objects:
+        [xyxy, mask] = obj
+        w = xyxy[2] - xyxy[0]
+        h = xyxy[3] - xyxy[1]
+        encryption_image = fusion_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :]
+        if mask is not None:
+            assert w*h == len(mask) or w*h*c == len(mask), 'error dimension {}x{} to mask dimension {}'.format(w, h, len(mask))
+            roi_mask = mask.reshape(w, h, -1)
+            if roi_mask.shape[2] != c:
+                roi_mask = roi_mask.repeat(c, axis=2)  # 扩充mask w,h,c
+        else: roi_mask = None
+        encryption_object.append([encryption_image, xyxy, roi_mask])
+        
+    
+    return RoIDecryption(fusion_image, encryption_object, key)
 
 # ---------------- Encryption -------------
 # stack 用于预测框的相交检测，请在调用前使用stack.clear()清空之前的值
@@ -163,7 +304,7 @@ def DirectEncryption(fusion_image, xyxy, key, mask=None, name: str = 'object'):
 
         # ------------------------------------------------------------
         # 错误处理 （当需要加密的区域与其他区域完全重叠，且被其他区域加密时）
-        if np.size(encryption_list) == 0:
+        if np.size(encryption_list) <= 4:
             return roi, roi_mask, fusion_image
         # ------------------------------------------------------------
 
@@ -334,6 +475,9 @@ def RoIDecryption(fusion_image, encryption_object, key):
     Returns: decryption image
 
     """
+
+    w, h, c = fusion_image.shape
+
     for encry_obj in encryption_object:
         _, xyxy, mask = encry_obj
 
@@ -345,6 +489,12 @@ def RoIDecryption(fusion_image, encryption_object, key):
         encryption_image = fusion_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :]
 
         if mask is not None:
+            # 选择mask加密区域，并转换为nx1x3维数组
+            if np.ndim(mask) != 3:
+                mask = np.expand_dims(mask, axis=2)  # w,h,1
+            if mask.shape[2] != c:
+                mask = mask.repeat(c, axis=2)  # 扩充mask w,h,c
+
             decryption_list = encryption_image[mask == 1, np.newaxis]  # nx1x3
             decryption_list = np.hstack((decryption_list[::3],
                                          decryption_list[1::3],
@@ -352,7 +502,7 @@ def RoIDecryption(fusion_image, encryption_object, key):
 
             # --------------------------------------------------------------------
             # 错误处理（不需要解密，由于与其他物体重叠较大，当其他物体解密后，该物体也会被解密）
-            if np.size(decryption_list) == 0:
+            if np.size(decryption_list) <= 4:
                 continue
             # --------------------------------------------------------------------
 
@@ -494,6 +644,7 @@ def show_detection_result(image, detect_type: str = 'object'):
 
         # cv2.imshow(name, cv2whc(image[xyxy[0]:xyxy[2], xyxy[1]:xyxy[3]]))
         # cv2.waitKey(0)
+        pass
 
 
 def non_max_suppression(
