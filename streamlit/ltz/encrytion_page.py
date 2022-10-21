@@ -93,8 +93,10 @@ def app():
                             cropped_img['top'] + cropped_img['height']]
                     img = np.ascontiguousarray(img)
                     key = KeyGenerator(img)
-                    _, fusion_img = SelectAreaEcryption(cv2whc(img), xyxy, key)
+                    encryption_object, fusion_img = SelectAreaEcryption(cv2whc(img), xyxy, key)
                     Image.fromarray(cv2whc(fusion_img)).save('../data/images/custom_encryImg.png')
+                    # 写入加密需要的信息
+                    SetEncryptionImage('../data/images/custom_encryImg.png', encryption_object, 'custom', fusion_img)
                     with open('../data/images/custom_encryImg.png', 'rb') as file:
                         btn = st.download_button(
                             label='下载加密后的图片',
@@ -136,6 +138,7 @@ def app():
                                                          [str(i) + ': ' + model_detect.names[int(v)] for i, v in
                                                           enumerate(notuse_value[:, 5:6])])
 
+                    encryption_object = []
                     fusion_image = cv2whc(img)
 
                     if len(result) == 0:
@@ -161,10 +164,11 @@ def app():
                         # 重叠判定（若之前存在已加密的内容，则当前物体存在部分不需要加密）
                         is_overlap, overlap_areas = Overlap(xyxy, mask)
                         encryption_image, mask, fusion_image = OverlapEncryption(fusion_image, xyxy, key,
-                                                                                     overlap_areas,
-                                                                                     mask, name) \
+                                                                                 overlap_areas,
+                                                                                 mask, name) \
                             if is_overlap else \
                             DirectEncryption(fusion_image, xyxy, key, mask, name)
+                        encryption_object.append([encryption_image, xyxy, mask])
                     im0 = annotator.result()
                     st.image(im0, use_column_width='always')
 
@@ -173,6 +177,8 @@ def app():
 
                     st.image(cv2whc(fusion_image), use_column_width='always')
                     Image.fromarray(cv2whc(fusion_image)).save('../data/images/detect_encryImg.png')
+                    # 写入加密需要的信息
+                    SetEncryptionImage('../data/images/detect_encryImg.png', encryption_object, 'object', fusion_image)
                     with open('../data/images/detect_encryImg.png', 'rb') as file:
                         btn = st.sidebar.download_button(
                             label='下载加密后的图片',
@@ -201,8 +207,9 @@ def app():
                     # fusion_image = img
 
                     multiselect = st.sidebar.multiselect('你需要加密的类别',
-                                                     [str(i) + ': ' + model_segment.names[int(v)] for i, v in
-                                                      enumerate(notuse_value[:, 5:6])])
+                                                         [str(i) + ': ' + model_segment.names[int(v)] for i, v in
+                                                          enumerate(notuse_value[:, 5:6])])
+                    encryption_object = []
                     fusion_image = cv2whc(img)
                     # if multiselect:
                     #     print('0', multiselect)
@@ -234,6 +241,7 @@ def app():
                                                                                  mask, name) \
                             if is_overlap else \
                             DirectEncryption(fusion_image, xyxy, key, mask, name)
+                        encryption_object.append([encryption_image, xyxy, mask])
                     im0 = annotator.result()
                     st.image(im0, use_column_width='always', width=850)
 
@@ -242,6 +250,8 @@ def app():
 
                 st.image(cv2whc(fusion_image), use_column_width='always')
                 Image.fromarray(cv2whc(fusion_image)).save('../data/images/segment_encryImg.png')
+                # 写入加密需要的信息
+                SetEncryptionImage('../data/images/segment_encryImg.png', encryption_object, 'segment', fusion_image)
                 with open('../data/images/segment_encryImg.png', 'rb') as file:
                     btn = st.sidebar.download_button(
                         label='下载加密后的图片',

@@ -1,5 +1,5 @@
-import numpy as np
 import numba
+import numpy as np
 
 
 def OurEncryLifting(T, S1, S2, S3, S4):
