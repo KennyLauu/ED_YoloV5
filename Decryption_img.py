@@ -1,10 +1,9 @@
 import os
 import sys
+import time
 from pathlib import Path
 
 import cv2
-import numpy as np
-import time
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -60,4 +59,3 @@ SetEncryptionImage('encryption_image.png', encryption_object, encryption_method,
 img = EncryptionImage2Decryption('encryption_image.png', key)
 cv2.imshow('decryption', cv2whc(img))
 cv2.waitKey(0)
-

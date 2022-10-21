@@ -13,11 +13,12 @@ def cv2whc(img):
     """
     return np.ascontiguousarray(img.transpose((1, 0, 2))[:, :, ::-1])
 
+
 def text2key(text):
     """
     需要传入解密密钥，格式为 'a,b,c,d' 字符串或者列表 [a,b,c,d]
     """
-    text = str.split(text, ',') if isinstance(text, str) else text 
+    text = str.split(text, ',') if isinstance(text, str) else text
 
     assert isinstance(text, list), 'error text type, must be str or list'
     assert len(text) == 4, 'error dimension, must be 4-dimension, shape=(4,)'
@@ -26,27 +27,33 @@ def text2key(text):
     text = np.array([int(val) for val in text])
     return text
 
-def bytes2string(data:bytes):
+
+def bytes2string(data: bytes):
     return data.decode('ascii')
 
-def bytes2int(data:bytes):
+
+def bytes2int(data: bytes):
     return int(bytes2string(data))
 
-def get_wh(data:bytes):
+
+def get_wh(data: bytes):
     w_h_list = data.split(b',')
     return bytes2int(w_h_list[0]), bytes2int(w_h_list[1])
 
-def get_xyxy(data:bytes):
+
+def get_xyxy(data: bytes):
     xyxy_list = data.split(b',')
     return [bytes2int(xyxy_list[0]),
             bytes2int(xyxy_list[1]),
             bytes2int(xyxy_list[2]),
             bytes2int(xyxy_list[3])]
 
-def bytes2numpy(data:bytes):
+
+def bytes2numpy(data: bytes):
     return np.frombuffer(data, dtype=np.uint8)
 
-def get_object(data:bytes):
+
+def get_object(data: bytes):
     object_list = data.split(b'],')
     encryption_object = []
     for obj in object_list[:-1]:
@@ -54,28 +61,35 @@ def get_object(data:bytes):
         xyxy = get_xyxy(combine_list[0][1:])
         if combine_list[1] != b' ':
             mask = bytes2numpy(combine_list[1])
-        else: mask = None
+        else:
+            mask = None
         encryption_object.append([xyxy, mask])
     return encryption_object
 
-_unpack_function_ = {b'method':bytes2string, b'shape':get_wh,
-                   b'object_number':bytes2int, b'object':get_object}
 
-def SetEncryptionImage(image_path, encryption_object, encryption_method:str = 'object', image_array:np = None):
+_unpack_function_ = {b'method': bytes2string, b'shape': get_wh,
+                     b'object_number': bytes2int, b'object': get_object}
+
+
+def SetEncryptionImage(image_path, encryption_object=None, encryption_method: str = 'object', image_array: np = None):
     """
     Write Some Tip for Encryption Image
     """
-    w,h,c = 0,0,0
+    if encryption_object is None:
+        # 全图加密处理
+        return
+
+    w, h, c = 0, 0, 0
     if image_array is not None:
-        w,h,c = image_array.shape
+        w, h, c = image_array.shape
 
     is_encryption = False
 
     with open(image_path, mode='rb+') as binary_img:
-        binary_img.seek(-14, 2) # 获取最后四个字节
+        binary_img.seek(-14, 2)  # 获取最后四个字节
 
         encryption_info_aready = binary_img.readlines()[-1]
-        
+
         # 已加密则取消继续加密
         if b'encryption_end' in encryption_info_aready:
             is_encryption = True
@@ -89,19 +103,19 @@ def SetEncryptionImage(image_path, encryption_object, encryption_method:str = 'o
             binary_img.write(encryption_info.encode('ascii'))
 
             # 添加每个物体
-            for _ ,xyxy, mask in encryption_object:
+            for _, xyxy, mask in encryption_object:
                 encryption_object_info = '[{},{},{},{}|'.format(
                     int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3])
                 )
                 encryption_object_info_bytes = encryption_object_info.encode('ascii')
-                encryption_object_info_bytes += mask[:,:,0:1].tobytes() if mask is not None else b' '
+                encryption_object_info_bytes += mask[:, :, 0:1].tobytes() if mask is not None else b' '
                 encryption_object_info_bytes += b'],'
                 binary_img.write(encryption_object_info_bytes)
 
             encryption_info = ';'
             encryption_info += 'encryption_end'
             binary_img.write(encryption_info.encode('ascii'))
-    
+
 
 def GetEncryptionImageInfo(image_path):
     with open(image_path, mode='rb') as binary_img:
@@ -135,25 +149,28 @@ def EncryptionImage2Decryption(image_path, key):
     import cv2
     # 使用cv2读取图片
     fusion_image = cv2whc(cv2.imread(image_path))
-    img_w, img_h, c = fusion_image.shape 
+    img_w, img_h, c = fusion_image.shape
 
     encryption_object = []
-    
+
     for obj in encryption_objects:
         [xyxy, mask] = obj
         w = xyxy[2] - xyxy[0]
         h = xyxy[3] - xyxy[1]
         encryption_image = fusion_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :]
         if mask is not None:
-            assert w*h == len(mask) or w*h*c == len(mask), 'error dimension {}x{} to mask dimension {}'.format(w, h, len(mask))
+            assert w * h == len(mask) or w * h * c == len(mask), 'error dimension {}x{} to mask dimension {}'.format(w,
+                                                                                                                     h,
+                                                                                                                     len(mask))
             roi_mask = mask.reshape(w, h, -1)
             if roi_mask.shape[2] != c:
                 roi_mask = roi_mask.repeat(c, axis=2)  # 扩充mask w,h,c
-        else: roi_mask = None
+        else:
+            roi_mask = None
         encryption_object.append([encryption_image, xyxy, roi_mask])
-        
-    
+
     return RoIDecryption(fusion_image, encryption_object, key)
+
 
 # ---------------- Encryption -------------
 # stack 用于预测框的相交检测，请在调用前使用stack.clear()清空之前的值
@@ -440,6 +457,11 @@ def SelectAreaEcryption(image, xyxy, key):
     assert len(xyxy) == 4, 'please make sure the xyxy is 4-dimension, xyxy必须是4维的'
     assert xyxy[0] < xyxy[2] and xyxy[1] < xyxy[3], 'box position is error, must be left-top and right-bottom'
 
+    # ------------
+    # 全局操作
+    stack.clear()
+    # ------------
+
     fusion_image = image
     encryption_object = []
 
@@ -549,7 +571,7 @@ def initYOLOModel(task: str = 'object'):
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
     if task == 'object':
         # YOLOv5模型
-        model = DetectMultiBackend(weights='./weights/yolov5s.pt',
+        model = DetectMultiBackend(weights='./weights/yolov5x.pt',
                                    data='./data/coco.yaml', device=device)
     elif task == 'segment':
         model = DetectMultiBackend(
