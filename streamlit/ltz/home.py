@@ -19,26 +19,33 @@ def app():
     Steganography = Image.open('images/Steganography_img.png')
 
     # ---- HEADER SECTION ----
+
     with st.container():
         st.subheader("欢迎来到基于深度学习的加密系统")
+        banner_img = """
+                        <div id="banner"></div>
+                """
+        st.markdown(banner_img, unsafe_allow_html=True)
         # st.title("")
         # st.write(
         #     "I'm passionate on fusing polymer physics and artificial intelligence technology.."
         # )
         # st.write("[Learn More >](https://space.bilibili.com/76811961)")
 
-    with st.container():
-        contact_form_left = """
-                    <button type="submit">加密</button>
-                """
-        contact_form_right = """
-                    <button type="submit">解密</button>
-                """
-        left_column, right_column = st.columns(2)
-        with left_column:
-            st.markdown(contact_form_left, unsafe_allow_html=True)
-        with right_column:
-            st.markdown(contact_form_right, unsafe_allow_html=True)
+
+
+    # with st.container():
+    #     contact_form_left = """
+    #                 <button type="submit">加密</button>
+    #             """
+    #     contact_form_right = """
+    #                 <button type="submit">解密</button>
+    #             """
+    #     left_column, right_column = st.columns(2)
+    #     with left_column:
+    #         st.markdown(contact_form_left, unsafe_allow_html=True)
+    #     with right_column:
+    #         st.markdown(contact_form_right, unsafe_allow_html=True)
 
     # ---- WHAT I DO ----
     with st.container():
@@ -77,7 +84,7 @@ def app():
             )
         with st.expander('详解请点击此处'):
             st.write('首先上传封面图片和待加密图片，然后我们会对图片进行隐写，这是用例中得到复原后的图片')
-            st.image('images/Steganography_img_rec.png')
+            st.image('images/Steganography_img_rec.png', width=480)
 
     st.write('##')
     st.write("---")
@@ -139,24 +146,24 @@ def app():
     st.write('##')
     st.write("---")
 
-    # ---- CONTACT ----
-    with st.container():
-        st.write("---")
-        st.header("Get In Touch With Me!")
-        st.write("##")
-
-        # Documention: https://formsubmit.co/ !!! CHANGE EMAIL ADDRESS !!!
-        contact_form = """
-        <form action="https://formsubmit.co/YOUR@MAIL.COM" method="POST">
-            <input type="hidden" name="_captcha" value="false">
-            <input type="text" name="name" placeholder="Your name" required>
-            <input type="email" name="email" placeholder="Your email" required>
-            <textarea name="message" placeholder="Your message here" required></textarea>
-            <button type="submit">Send</button>
-        </form>
-        """
-        left_column, right_column = st.columns(2)
-        with left_column:
-            st.markdown(contact_form, unsafe_allow_html=True)
-        with right_column:
-            st.empty()
+    # # ---- CONTACT ----
+    # with st.container():
+    #     st.write("---")
+    #     st.header("Get In Touch With Me!")
+    #     st.write("##")
+    #
+    #     # Documention: https://formsubmit.co/ !!! CHANGE EMAIL ADDRESS !!!
+    #     contact_form = """
+    #     <form action="https://formsubmit.co/YOUR@MAIL.COM" method="POST">
+    #         <input type="hidden" name="_captcha" value="false">
+    #         <input type="text" name="name" placeholder="Your name" required>
+    #         <input type="email" name="email" placeholder="Your email" required>
+    #         <textarea name="message" placeholder="Your message here" required></textarea>
+    #         <button type="submit">Send</button>
+    #     </form>
+    #     """
+    #     left_column, right_column = st.columns(2)
+    #     with left_column:
+    #         st.markdown(contact_form, unsafe_allow_html=True)
+    #     with right_column:
+    #         st.empty()

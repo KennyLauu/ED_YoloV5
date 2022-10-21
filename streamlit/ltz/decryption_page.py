@@ -8,12 +8,9 @@ def app():
         img = Image.open(img_file)
 
         with st.container():
-
             contact_form_left, contact_form_right = st.columns((1, 1), gap='small')
-
         with contact_form_left:
             st.subheader('密文图像')
             st.image(img)
-
         with contact_form_right:
             st.subheader('解密图像')

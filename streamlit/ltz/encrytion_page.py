@@ -48,7 +48,8 @@ def app():
                     key = ProcessingKey(img)
                     EncryImg = noColorEncry(img, key)
 
-                    encryImg = Image.fromarray(np.transpose(EncryImg, (1, 0, 2)))
+                    # encryImg = Image.fromarray(np.transpose(EncryImg, (1, 0, 2)))
+                    encryImg = Image.fromarray(EncryImg)
                     encryImg.save('../data/images/self_encryImg.png')
                     st.image(encryImg)
                     # DecryImg = noColorDecry(EncryImg, key)
@@ -137,6 +138,13 @@ def app():
 
                     fusion_image = cv2whc(img)
 
+                    if len(result) == 0:
+                        fusion_image = noColorEncry(fusion_image, key)
+
+                        # encryImg = Image.fromarray(np.transpose(EncryImg, (1, 0, 2)))
+                        encryImg = Image.fromarray(cv2whc(fusion_image))
+                        encryImg.save('../data/images/detect_encryImg.png')
+
                     # ------------
                     # 全局操作
                     stack.clear()
@@ -198,6 +206,12 @@ def app():
                     fusion_image = cv2whc(img)
                     # if multiselect:
                     #     print('0', multiselect)
+                    if len(result) == 0:
+                        fusion_image = noColorEncry(fusion_image, key)
+
+                        # encryImg = Image.fromarray(np.transpose(EncryImg, (1, 0, 2)))
+                        encryImg = Image.fromarray(cv2whc(fusion_image))
+                        encryImg.save('../data/images/segment_encryImg.png')
 
                     # ------------
                     # 全局操作
@@ -221,7 +235,7 @@ def app():
                             if is_overlap else \
                             DirectEncryption(fusion_image, xyxy, key, mask, name)
                     im0 = annotator.result()
-                    st.image(im0, use_column_width='always')
+                    st.image(im0, use_column_width='always', width=850)
 
             with contact_form_right:
                 st.subheader('加密后的图片')

@@ -435,6 +435,8 @@ def runModel(model, image, detect_type='object'):
     masks = None
     # 获取检测/分割结果
     for i, det in enumerate(pred):  # batch size
+        if det.shape[0] == 0: # 没有检测到物体
+            return result, det
         # 获取掩码
         if detect_type == 'segment':
             masks = process_mask(proto[i], det[:, 6:], det[:, :4], img.shape[2:], upsample=True)  # HWC

@@ -28,8 +28,16 @@ button[type=submit]:hover {
   background-color: #45a049;
 }
 
-
 /* Hide Streamlit Branding */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 header {visibility: hidden;}
+
+#banner {
+  background-image: url('https://s2.loli.net/2022/10/18/ta7idGCPLRJulQ4.jpg');
+  height: 580px;
+  width: 95%;
+  margin: 0 auto;
+  background-size: cover;
+}
+
