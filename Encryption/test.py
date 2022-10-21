@@ -1,16 +1,15 @@
 # 加密/解密测试
 
-import numpy as np
-import cv2
-import matplotlib.pyplot as plt
 # matplotlib==3.5.2
 import time
-from PIL import Image
 
+import matplotlib.pyplot as plt
+import numpy as np
+
+from DetectUtils import cv2whc
+from EncryUtils import ProcessingKey
 from noColorDecry import noColorDecry
 from noColorEncry import noColorEncry
-from EncryUtils import ProcessingKey
-from DetectUtils import cv2whc
 
 #
 # plt.axis('off')
@@ -19,7 +18,7 @@ from DetectUtils import cv2whc
 
 # 原图
 # plt.title('source image')
-img = plt.imread('../data/images/person.jpg')
+img = plt.imread('../data/images/bus.jpg')
 # img = np.ascontiguousarray(img[:, :, :])
 # plt.imshow(img)
 # plt.show()

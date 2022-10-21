@@ -15,7 +15,7 @@ def app():
     allEncry_img = Image.open("images/allEncry_img.png")
     YoloEncry_img = Image.open("images/YoloEncry_img.png")
     Yoloseg_img = Image.open("images/Yolo_seg_img.png")
-    img_nano = Image.open("images/nano.jpg")
+    # img_nano = Image.open("images/nano.jpg")
     Steganography = Image.open('images/Steganography_img.png')
 
     # ---- HEADER SECTION ----
@@ -58,7 +58,7 @@ def app():
             )
             # st.write("[Bilibili Channel >](https://space.bilibili.com/76811961)")
         with right_column:
-            st.image('images/sphere.jpg')
+            st.image('images/sphere.png')
 
     st.write("---")
     st.header("用例如下")

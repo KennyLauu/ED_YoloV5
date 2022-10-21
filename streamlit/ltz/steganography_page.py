@@ -13,11 +13,11 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 import streamlit as st
 from PIL import Image
-from HiNet.stegmodel import run_steg_model, init_steg_net
-
-steg_net = None
-if steg_net is None:
-    steg_net = init_steg_net()
+# from HiNet.stegmodel import run_steg_model, init_steg_net
+#
+# steg_net = None
+# if steg_net is None:
+    # steg_net = init_steg_net()
 
 def app():
     st.header('欢迎来到隐写模块')
@@ -37,9 +37,9 @@ def app():
             st.subheader('密文图片')
             img_secret = Image.open(img_file_secret)
             st.image(img_secret)
-
-    with st.container():
-        contact_form_next_left, contact_form_next_right = st.columns((1, 1), gap='medium')
-        if st.button('steg'):
-            run_steg_model(steg_net, img_cover, img_secret, 'steg')
-            st.write('steg done.')
+#
+#     with st.container():
+#         contact_form_next_left, contact_form_next_right = st.columns((1, 1), gap='medium')
+#         if st.button('steg'):
+#             run_steg_model(steg_net, img_cover, img_secret, 'steg')
+#             st.write('steg done.')

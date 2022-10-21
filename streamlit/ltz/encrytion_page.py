@@ -1,16 +1,12 @@
 import os
 import sys
 
-import numpy as np
-import torch
-
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 
 import streamlit as st
 from streamlit_cropper import st_cropper
 from PIL import Image
-from Encryption.noColorEncry import noColorEncry
 from Encryption.EncryUtils import *
 from DetectUtils import *
 from utils.plots import Annotator
@@ -48,7 +44,7 @@ def app():
                     key = ProcessingKey(img)
                     EncryImg = noColorEncry(img, key)
 
-                    encryImg = Image.fromarray(np.transpose(EncryImg, (1, 0, 2)))
+                    encryImg = Image.fromarray(EncryImg)
                     encryImg.save('../data/images/self_encryImg.png')
                     st.image(encryImg)
                     # DecryImg = noColorDecry(EncryImg, key)
@@ -153,8 +149,8 @@ def app():
                         # 重叠判定（若之前存在已加密的内容，则当前物体存在部分不需要加密）
                         is_overlap, overlap_areas = Overlap(xyxy, mask)
                         encryption_image, mask, fusion_image = OverlapEncryption(fusion_image, xyxy, key,
-                                                                                     overlap_areas,
-                                                                                     mask, name) \
+                                                                                 overlap_areas,
+                                                                                 mask, name) \
                             if is_overlap else \
                             DirectEncryption(fusion_image, xyxy, key, mask, name)
                     im0 = annotator.result()
@@ -193,8 +189,8 @@ def app():
                     # fusion_image = img
 
                     multiselect = st.sidebar.multiselect('你需要加密的类别',
-                                                     [str(i) + ': ' + model_segment.names[int(v)] for i, v in
-                                                      enumerate(notuse_value[:, 5:6])])
+                                                         [str(i) + ': ' + model_segment.names[int(v)] for i, v in
+                                                          enumerate(notuse_value[:, 5:6])])
                     fusion_image = cv2whc(img)
                     # if multiselect:
                     #     print('0', multiselect)

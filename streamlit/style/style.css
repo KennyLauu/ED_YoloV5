@@ -28,6 +28,12 @@ button[type=submit]:hover {
   background-color: #45a049;
 }
 
+#banner{
+  background-image: url("../images/nano.png"), no-repeat;
+  height: 100%;
+  width: 100%;
+}
+
 
 /* Hide Streamlit Branding */
 #MainMenu {visibility: hidden;}

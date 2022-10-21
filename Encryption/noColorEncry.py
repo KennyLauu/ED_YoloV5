@@ -1,7 +1,8 @@
-import numpy as np
+import os
 import sys
 from pathlib import Path
-import os
+
+import numpy as np
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory

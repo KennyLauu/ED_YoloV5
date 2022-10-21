@@ -255,7 +255,7 @@ def RoIEncryption(image, key, label: list = None, detect_type='object'):
 
     # 返回检测结果
     model = initYOLOModel(detect_type)
-    result = runModel(model, cv2whc(image), detect_type)  # 由于runModel是处理cv的，故这里转回cv
+    result, _ = runModel(model, cv2whc(image), detect_type)  # 由于runModel是处理cv的，故这里转回cv
 
     # ------------
     # 全局操作
