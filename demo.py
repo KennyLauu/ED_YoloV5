@@ -7,7 +7,7 @@ def main():
     name = 'demo'
 
     det = Detector()
-    cap = cv2.VideoCapture('D:/User/Videos/Captures/test/dog.mp4')
+    cap = cv2.VideoCapture(r'C:\Users\ltz\Desktop\srcimg\dog.mp4')
     fps = int(cap.get(5))
     # print('fps:', fps)
     t = int(1000/fps)

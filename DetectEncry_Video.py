@@ -14,15 +14,15 @@ ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from DetectUtils import *
 
-video_path = 'D:/User/Documents/Github/ED_YoloV5/data/videos/dog.mp4'
+video_path = r'C:\Users\ltz\Desktop\srcimg\test01.mp4'
 
 cap = cv2.VideoCapture(video_path)
 frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 frame = 1
 
 detect_type = 'segment'
-key = np.array([1,2,3,4])
-label = 'person'
+key = np.array([1, 2, 3, 4])
+# label = 'person'
 model = initYOLOModel(detect_type)
 
 start = time.time()
@@ -30,7 +30,7 @@ start = time.time()
 video_save = cv2.VideoWriter('encryption_video.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 30, (960, 540))
 
 
-while(cap.isOpened()):
+while (cap.isOpened()):
     ret, img = cap.read()
     
     if ret == False: 
