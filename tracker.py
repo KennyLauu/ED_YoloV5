@@ -32,9 +32,11 @@ def plot_bboxes(image, bboxes, mask, key, line_thickness=None):
         cv2.putText(image, '{}: {}'.format(pos_id, cls_id), (c1[0], c1[1] - 2), 0, tl / 3,
                     [225, 255, 255], thickness=tf, lineType=cv2.LINE_AA)
         # _, image = SelectAreaEncryption(image, [y1, x1, y2, x2], key)
-        encryption_info, image = SelectMaskEncryption(cv2whc(image), cv2whc(mask[:, :, detect_id:detect_id + 1]), key)
+        if mask is not None:
+            encryption_info, image = SelectMaskEncryption(cv2whc(image), cv2whc(mask[:, :, detect_id:detect_id + 1]), key)
+        else:
+            _, image = SelectAreaEncryption(cv2whc(image), [x1, y1, x2, y2], key)
         # _, image = SelectEnncryption(cv2whc(image), [x1, y1, x2, y2], cv2whc(mask[:, :, detect_id:detect_id + 1]), key)
-
         image = cv2whc(image)
 
     return image
@@ -70,7 +72,7 @@ def update_tracker(target_detector, image, frame_counter):
     print('deep sort spend:', time.time() - start)
 
     bboxes2draw = []
-    label_id = [1]  # 获取到的物体track_id
+    label_id = None  # 获取到的物体track_id
     # face_bboxes = []
     # current_ids = []
     for value in list(outputs):
