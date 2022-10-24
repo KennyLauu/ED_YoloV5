@@ -1,26 +1,35 @@
-from AIDetector_pytorch import Detector
-import imutils
+import time
+
 import cv2
+import imutils
+
+from AutoDetector import Detector
+
 
 def main():
-
     name = 'demo'
 
     det = Detector()
-    cap = cv2.VideoCapture('D:/User/Videos/Captures/test/dog.mp4')
-    fps = int(cap.get(5))
+    det.init_model(weight='weights/yolov5s-seg.pt', detect_type='segment')
+    # det.init_model(weight='weights/yolov5s.pt', detect_type='object')
+
+    cap = cv2.VideoCapture('D:/User/Videos/3.mp4')
+    fps = int(cap.get(5))  # 获取视频帧率
+    all_frames = cap.get(7)  # 获取所有帧数量
     # print('fps:', fps)
-    t = int(1000/fps)
+    t = int(1000 / fps)
+    start = time.time()
 
     videoWriter = None
+    frame = 1
 
     while True:
-
+        inner_start = time.time()
         # try:
-        _, im = cap.read()
-        if im is None:
+        ret, im = cap.read()
+        if ret is False or im is None:
             break
-        
+
         result = det.feedCap(im)
         result = result['frame']
         result = imutils.resize(result, height=500)
@@ -30,7 +39,12 @@ def main():
             videoWriter = cv2.VideoWriter(
                 'result.mp4', fourcc, fps, (result.shape[1], result.shape[0]))
 
-        videoWriter.write(result)
+        end = time.time()
+        print('total time: ', end - inner_start)
+        print(frame, '/', all_frames, ' fps: ', frame / (end - start))
+        frame += 1
+
+        # videoWriter.write(result)
         cv2.imshow(name, result)
         cv2.waitKey(t)
 
@@ -40,11 +54,11 @@ def main():
         # except Exception as e:
         #     print(e)
         #     break
-
+    print('total time: ', time.time() - start)
     cap.release()
     videoWriter.release()
     cv2.destroyAllWindows()
 
+
 if __name__ == '__main__':
-    
     main()

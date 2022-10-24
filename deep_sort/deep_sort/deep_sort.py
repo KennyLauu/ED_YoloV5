@@ -25,7 +25,7 @@ class DeepSort(object):
         self.tracker = Tracker(
             metric, max_iou_distance=max_iou_distance, max_age=max_age, n_init=n_init)
 
-    def update(self, bbox_xywh, confidences, clss, ori_img):
+    def update(self, bbox_xywh, confidences, clss, ori_img, frame_counter):
         self.height, self.width = ori_img.shape[:2]
         # generate detections
         features = self._get_features(bbox_xywh, ori_img)
@@ -34,7 +34,7 @@ class DeepSort(object):
             confidences) if conf > self.min_confidence]
         # update tracker
         self.tracker.predict()
-        self.tracker.update(detections)
+        self.tracker.update(detections, frame_counter)
 
         # output bbox identities
         outputs = []
@@ -43,7 +43,15 @@ class DeepSort(object):
                 continue
             box = track.to_tlwh()
             x1, y1, x2, y2 = self._tlwh_to_xyxy(box)
-            outputs.append((x1, y1, x2, y2, track.cls_, track.track_id))
+            outputs.append((x1, y1, x2, y2, track.cls_, track.track_id, track.current_detect_index))
+
+        # 处理1，2，3帧无法加密的问题（即前3帧全用于匹配了）
+        for track in self.tracker.tracks_save:
+            if track.time_since_update == 0:
+                box = track.to_tlwh()
+                x1, y1, x2, y2 = self._tlwh_to_xyxy(box)
+                outputs.append((x1, y1, x2, y2, track.cls_, track.track_id, track.current_detect_index))
+
         return outputs
 
     @staticmethod

@@ -63,7 +63,7 @@ class Track:
 
     """
 
-    def __init__(self, mean, cls_, covariance, track_id, n_init, max_age,
+    def __init__(self, mean, cls_, covariance, track_id, n_init, max_age, position, frame_pos=0,
                  feature=None):
         self.mean = mean
         self.cls_ = cls_
@@ -75,6 +75,16 @@ class Track:
 
         self.state = TrackState.Tentative
         self.features = []
+
+        # 自定义保存每一帧的位置
+        self.frames_pos = []
+        self.frames_pos.append(frame_pos)
+        # 保存每帧出现物体的位置
+        self.positions = []
+        self.positions.append(position)
+        # 保存当前帧匹配的检测器的索引
+        self.current_detect_index = 0
+
         if feature is not None:
             self.features.append(feature)
 
@@ -124,7 +134,7 @@ class Track:
         self.age += 1
         self.time_since_update += 1
 
-    def update(self, kf, detection):
+    def update(self, kf, detection, frame_pos):
         """Perform Kalman filter measurement update step and update the feature
         cache.
 
@@ -134,12 +144,15 @@ class Track:
             The Kalman filter.
         detection : Detection
             The associated detection.
+        frame_pos: The position of the frames where object appears in the video
 
         """
         self.mean, self.covariance = kf.update(
             self.mean, self.covariance, detection.to_xyah())
         self.features.append(detection.feature)
         self.cls_ = detection.cls_
+        self.frames_pos.append(frame_pos)
+        self.positions.append(self.to_tlbr())
 
         self.hits += 1
         self.time_since_update = 0

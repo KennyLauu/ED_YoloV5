@@ -35,8 +35,8 @@ label = None
 
 # 返回原图，加密+原图等
 start = time.time()
-# encryption_object, fusion_image = RoIEncryption(img, key, label, detect_type='segment')
-encryption_object, fusion_image = RoIEncryption(img, key, label, 'object')
+encryption_object, fusion_image = RoIEncryption(img, key, label, detect_type='segment')
+# encryption_object, fusion_image = RoIEncryption(img, key, label, 'object')
 end = time.time()
 print('encryption + load YOLO spend: ', end - start)
 cv2.imshow('encryption image', cv2whc(fusion_image))

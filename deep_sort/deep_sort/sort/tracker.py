@@ -1,9 +1,11 @@
 # vim: expandtab:ts=4:sw=4
 from __future__ import absolute_import
+
 import numpy as np
+
+from . import iou_matching
 from . import kalman_filter
 from . import linear_assignment
-from . import iou_matching
 from .track import Track
 
 
@@ -17,6 +19,7 @@ class Tracker:
 
         self.kf = kalman_filter.KalmanFilter()
         self.tracks = []
+        self.tracks_save = []
         self._next_id = 1
 
     def predict(self):
@@ -27,13 +30,15 @@ class Tracker:
         for track in self.tracks:
             track.predict(self.kf)
 
-    def update(self, detections):
+    def update(self, detections, frame_pos):
         """Perform measurement update and track management.
 
         Parameters
         ----------
         detections : List[deep_sort.detection.Detection]
             A list of detections at the current time step.
+        frame_pos :
+            The position of frame where object appears in the video
 
         """
         # Run matching cascade.
@@ -42,12 +47,16 @@ class Tracker:
 
         # Update track set.
         for track_idx, detection_idx in matches:
-            self.tracks[track_idx].update(
-                self.kf, detections[detection_idx])
+            if self.tracks[track_idx].cls_ == detections[detection_idx].cls_:
+                self.tracks[track_idx].update(self.kf, detections[detection_idx], frame_pos)
+                self.tracks[track_idx].current_detect_index = detection_idx
+            else:
+                unmatched_tracks.append(track_idx)
+                unmatched_detections.append(detection_idx)
         for track_idx in unmatched_tracks:
             self.tracks[track_idx].mark_missed()
         for detection_idx in unmatched_detections:
-            self._initiate_track(detections[detection_idx])
+            self._initiate_track(detections, detection_idx, frame_pos)
         self.tracks = [t for t in self.tracks if not t.is_deleted()]
 
         # Update distance metric.
@@ -71,6 +80,12 @@ class Tracker:
             cost_matrix = linear_assignment.gate_cost_matrix(
                 self.kf, cost_matrix, tracks, dets, track_indices,
                 detection_indices)
+
+            # 将不同类别的cost matrix置为最大
+            for row, track_idx in enumerate(track_indices):
+                for col, det_idx in enumerate(detection_indices):
+                    if tracks[track_idx].cls_ != dets[det_idx].cls_:
+                        cost_matrix[row, col] = linear_assignment.INFTY_COST
 
             return cost_matrix
 
@@ -101,9 +116,12 @@ class Tracker:
         unmatched_tracks = list(set(unmatched_tracks_a + unmatched_tracks_b))
         return matches, unmatched_tracks, unmatched_detections
 
-    def _initiate_track(self, detection):
+    def _initiate_track(self, detections, detection_idx, frame_pos):
+        detection = detections[detection_idx]
         mean, covariance = self.kf.initiate(detection.to_xyah())
-        self.tracks.append(Track(
-            mean, detection.cls_, covariance, self._next_id, self.n_init, self.max_age,
-            detection.feature))
+        temp = Track(mean, detection.cls_, covariance, self._next_id, self.n_init, self.max_age, detection.to_tlbr(),
+                     frame_pos, detection.feature)
+        temp.current_detect_index = detection_idx
+        self.tracks.append(temp)
+        self.tracks_save.append(temp)
         self._next_id += 1
