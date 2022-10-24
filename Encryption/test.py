@@ -8,7 +8,7 @@ from noColorDecry import noColorDecry
 from noColorEncry import noColorEncry
 
 # 原图
-img = plt.imread('./data/images/zidane.jpg')
+img = plt.imread('../data/images/zidane.jpg')
 img = np.ascontiguousarray(img[:, :, :])
 plt.imshow(img)
 plt.show()

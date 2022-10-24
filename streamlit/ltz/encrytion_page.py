@@ -100,7 +100,7 @@ def app():
                                 cropped_img['top'] + cropped_img['height']]
                     img = np.ascontiguousarray(img)
                     key = KeyGenerator(img)
-                    encryption_object, fusion_img = SelectAreaEcryption(cv2whc(img), xyxy, key)
+                    encryption_object, fusion_img = SelectAreaEncryption(cv2whc(img), xyxy, key)
                     Image.fromarray(cv2whc(fusion_img)).save('../data/images/custom_encryImg.png')
                     # 写入加密需要的信息
                     SetEncryptionImage('../data/images/custom_encryImg.png', encryption_object, 'custom', fusion_img)

@@ -14,6 +14,13 @@ def cv2whc(img):
     return np.ascontiguousarray(img.transpose((1, 0, 2))[:, :, ::-1])
 
 
+def mask2xyxy(mask):
+    index = np.argwhere(mask == 1)
+    x1, y1 = np.min(index, axis=0)[:2]
+    x2, y2 = np.max(index, axis=0)[:2]
+    return [x1, y1, x2, y2]
+
+
 def text2key(text):
     """
     需要传入解密密钥，格式为 'a,b,c,d' 字符串或者列表 [a,b,c,d]
@@ -68,10 +75,12 @@ def get_object(data: bytes):
 
 
 _unpack_function_ = {b'method': bytes2string, b'shape': get_wh,
-                     b'object_number': bytes2int, b'object': get_object}
+                     b'object_number': bytes2int, b'object': get_object, b'key': bytes2numpy}
 
 
-def SetEncryptionImage(image_path, encryption_object=None, encryption_method: str = 'object', image_array: np = None):
+def SetEncryptionImage(image_path, encryption_object=None,
+                       encryption_method: str = 'object',
+                       image_array: np = None, key=text2key('1,2,3,4')):
     """
     Write Some Tip for Encryption Image
     """
@@ -112,9 +121,10 @@ def SetEncryptionImage(image_path, encryption_object=None, encryption_method: st
                 encryption_object_info_bytes += b'],'
                 binary_img.write(encryption_object_info_bytes)
 
-            encryption_info = ';'
-            encryption_info += 'encryption_end'
-            binary_img.write(encryption_info.encode('ascii'))
+            encryption_info = b';key:'
+            encryption_info += key.astype(np.uint8).tobytes()
+            encryption_info += b';encryption_end'
+            binary_img.write(encryption_info)
 
 
 def GetEncryptionImageInfo(image_path):
@@ -139,12 +149,14 @@ def GetEncryptionImageInfo(image_path):
         return encryption_info
 
 
-def EncryptionImage2Decryption(image_path, key):
+def EncryptionImage2Decryption(image_path, key=None):
     # 将字符串key转为np
     key = text2key(key) if isinstance(key, str) else key
     # 获取图片中的掩码
     encryption_info = GetEncryptionImageInfo(image_path)
     encryption_objects = encryption_info['object']
+    if key is None:
+        key = encryption_info['key']
 
     import cv2
     # 使用cv2读取图片
@@ -159,9 +171,8 @@ def EncryptionImage2Decryption(image_path, key):
         h = xyxy[3] - xyxy[1]
         encryption_image = fusion_image[int(xyxy[0]):int(xyxy[2]), int(xyxy[1]):int(xyxy[3]), :]
         if mask is not None:
-            assert w * h == len(mask) or w * h * c == len(mask), 'error dimension {}x{} to mask dimension {}'.format(w,
-                                                                                                                     h,
-                                                                                                                     len(mask))
+            assert w * h == len(mask) or w * h * c == len(mask), \
+                'error dimension {}x{} to mask dimension {}'.format(w, h, len(mask))
             roi_mask = mask.reshape(w, h, -1)
             if roi_mask.shape[2] != c:
                 roi_mask = roi_mask.repeat(c, axis=2)  # 扩充mask w,h,c
@@ -177,7 +188,7 @@ def EncryptionImage2Decryption(image_path, key):
 stack = []
 
 
-def Overlap(xyxy, mask=None):
+def Overlap(xyxy=None, mask=None):
     """
     对预测框之间是否有相交的判断，可以对mask或者boxes进行检测，返回是否相交的结果，
     若result为false，则overlap_area列表为空
@@ -361,6 +372,12 @@ def DirectEncryption(fusion_image, xyxy, key, mask=None, name: str = 'object'):
         # cv2.imshow(name, cv2whc(roi))
         # cv2.waitKey(0)
 
+        # ------------------------------------------------------------
+        # 错误处理 （当需要加密的区域与其他区域完全重叠，且被其他区域加密时）
+        if np.size(roi) <= 4:
+            return roi, mask, fusion_image
+        # ------------------------------------------------------------
+
         # 加密
         encryption_image = noColorEncry(roi, key)
         # cv2.imshow(name+'encryption', cv2whc(encryption_image))
@@ -453,10 +470,64 @@ def RoIEncryption(image, key, label: list = None, detect_type='object'):
     return encryption_object, fusion_image
 
 
-def SelectAreaEcryption(image, xyxy, key):
+def SelectAreaEncryption(image, xyxy, key):
     assert len(xyxy) == 4, 'please make sure the xyxy is 4-dimension, xyxy必须是4维的'
     assert xyxy[0] < xyxy[2] and xyxy[1] < xyxy[3], 'box position is error, must be left-top and right-bottom'
 
+    # ------------
+    # 全局操作
+    stack.clear()
+    # ------------
+
+    fusion_image = image.copy()
+    encryption_object = []
+
+    # 重叠判定（若之前存在已加密的内容，则当前物体存在部分不需要加密）
+    is_overlap, overlap_areas = Overlap(xyxy)
+    encryption_image, mask, fusion_image = OverlapEncryption(fusion_image, xyxy, key, overlap_areas) \
+        if is_overlap else \
+        DirectEncryption(fusion_image, xyxy, key)
+
+    # 加密坐标
+    # pos_list = np.array(xyxy, ndmin=3).reshape(-1, 1, 1)  # 4x1x1
+    # print('encryption position before: ', pos_list)
+    # encryption_position = noColorEncry(pos_list, key)
+    # print('encryption position after: ', encryption_position)
+
+    encryption_object.append([encryption_image, xyxy, mask])
+
+    return encryption_object, fusion_image
+
+
+def SelectMaskEncryption(image, mask, key):
+    # ------------
+    # 全局操作
+    stack.clear()
+    # ------------
+
+    fusion_image = image.copy()
+    encryption_object = []
+
+    xyxy = mask2xyxy(mask)
+
+    # 重叠判定（若之前存在已加密的内容，则当前物体存在部分不需要加密）
+    is_overlap, overlap_areas = Overlap(mask=mask)
+    encryption_image, mask, fusion_image = OverlapEncryption(fusion_image, xyxy, key, overlap_areas, mask) \
+        if is_overlap else \
+        DirectEncryption(fusion_image, xyxy, key, mask)
+
+    # 加密坐标
+    # pos_list = np.array(xyxy, ndmin=3).reshape(-1, 1, 1)  # 4x1x1
+    # print('encryption position before: ', pos_list)
+    # encryption_position = noColorEncry(pos_list, key)
+    # print('encryption position after: ', encryption_position)
+
+    encryption_object.append([encryption_image, xyxy, mask])
+
+    return encryption_object, fusion_image
+
+
+def SelectEnncryption(image, xyxy, mask, key):
     # ------------
     # 全局操作
     stack.clear()
@@ -466,10 +537,10 @@ def SelectAreaEcryption(image, xyxy, key):
     encryption_object = []
 
     # 重叠判定（若之前存在已加密的内容，则当前物体存在部分不需要加密）
-    is_overlap, overlap_areas = Overlap(xyxy)
-    encryption_image, mask, fusion_image = OverlapEncryption(fusion_image, xyxy, key, overlap_areas) \
+    is_overlap, overlap_areas = Overlap(mask=mask)
+    encryption_image, mask, fusion_image = OverlapEncryption(fusion_image, xyxy, key, overlap_areas, mask) \
         if is_overlap else \
-        DirectEncryption(fusion_image, xyxy, key)
+        DirectEncryption(fusion_image, xyxy, key, mask)
 
     # 加密坐标
     # pos_list = np.array(xyxy, ndmin=3).reshape(-1, 1, 1)  # 4x1x1

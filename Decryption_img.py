@@ -53,9 +53,9 @@ cv2.imwrite('encryption_image.png', cv2whc(fusion_image))
 
 
 # 添加加密信息
-SetEncryptionImage('encryption_image.png', encryption_object, encryption_method, fusion_image)
+SetEncryptionImage('encryption_image.png', encryption_object, encryption_method, fusion_image, key)
 
 # encryption_info = GetEncryptionImageInfo('encryption_image.png')
-img = EncryptionImage2Decryption('encryption_image.png', key)
+img = EncryptionImage2Decryption('encryption_image.png')
 cv2.imshow('decryption', cv2whc(img))
 cv2.waitKey(0)

@@ -101,11 +101,11 @@ class Net(nn.Module):
 if __name__ == '__main__':
     net = Net()
     x = torch.randn(4, 3, 128, 64)
-    y = net(x)
+    # y = net(x)
     # import ipdb
 
     # ipdb.set_trace()
 
-    import torchsummary
-    torchsummary.summary(net, (3, 128, 64), 4)
+    # import torchsummary
+    # torchsummary.summary(net, x.shape[1:], x.shape[0], device='cpu')
 
