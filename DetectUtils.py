@@ -16,6 +16,8 @@ def cv2whc(img):
 
 def mask2xyxy(mask):
     index = np.argwhere(mask == 1)
+    if len(index) == 0:
+        return None
     x1, y1 = np.min(index, axis=0)[:2]
     x2, y2 = np.max(index, axis=0)[:2]
     return [x1, y1, x2, y2]
@@ -509,6 +511,13 @@ def SelectMaskEncryption(image, mask, key):
     encryption_object = []
 
     xyxy = mask2xyxy(mask)
+
+    # -----------------------------
+    # 错误处理，当两物体完全重叠时，直接返回
+    if xyxy is None:
+        return encryption_object, fusion_image
+    # -----------------------------
+
 
     # 重叠判定（若之前存在已加密的内容，则当前物体存在部分不需要加密）
     is_overlap, overlap_areas = Overlap(mask=mask)
