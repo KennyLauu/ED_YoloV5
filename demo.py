@@ -11,11 +11,10 @@ def main():
         name = 'demo'
 
         det = Detector()
-        det.init_model(weight='weights/yolov5s-seg.pt', detect_type='segment')
+        det.init_model(weight='weights/yolov5x-seg.pt', detect_type='segment')
         # det.init_model(weight='weights/yolov5s.pt', detect_type='object')
 
-        cap = cv2.VideoCapture('D:/User/Documents/Tencent Files/2696761655/FileRecv/demo01.mp4')
-        # cap.set(cv2.CAP_PROP_POS_FRAMES, 1480)  # 设置要获取的帧号
+        cap = cv2.VideoCapture(r'C:\Users\ltz\Desktop\srcimg\demo03.mp4')
         fps = int(cap.get(5))  # 获取视频帧率
         all_frames = cap.get(7)  # 获取所有帧数量
         # print('fps:', fps)

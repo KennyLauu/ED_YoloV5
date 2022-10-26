@@ -1,5 +1,14 @@
 import numpy as np
 import torch
+import os
+import sys
+from pathlib import Path
+
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[0]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
+ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 # from DetectUtils import non_max_suppression
 from models.experimental import attempt_load
@@ -8,7 +17,8 @@ from utils.augmentations import letterbox
 from utils.general import scale_boxes, non_max_suppression
 from utils.torch_utils import select_device
 from utils.segment.general import process_mask, scale_image
-
+from deep_sort.deep_sort import DeepSort
+from deep_sort.utils.parser import get_config
 
 class baseDet(object):
 
@@ -16,6 +26,22 @@ class baseDet(object):
         self.img_size = 640
         self.threshold = 0.3
         self.stride = 1
+        self.load_deepsort()
+
+    def load_deepsort(self):
+        palette = (2 ** 11 - 1, 2 ** 15 - 1, 2 ** 20 - 1)
+        cfg = get_config()
+        cfg.merge_from_file(r"D:\Project\Github\ED_YoloV5\data\deep_sort.yaml")
+        self.deepsort = DeepSort(cfg.DEEPSORT.REID_CKPT,
+                                 max_dist=cfg.DEEPSORT.MAX_DIST, min_confidence=cfg.DEEPSORT.MIN_CONFIDENCE,
+                                 nms_max_overlap=cfg.DEEPSORT.NMS_MAX_OVERLAP,
+                                 max_iou_distance=cfg.DEEPSORT.MAX_IOU_DISTANCE,
+                                 max_age=cfg.DEEPSORT.MAX_AGE, n_init=cfg.DEEPSORT.N_INIT,
+                                 nn_budget=cfg.DEEPSORT.NN_BUDGET,
+                                 use_cuda=True)
+
+    def update_tracker(self):
+        self.deepsort.update_tracker()
 
     def build_config(self):
         self.faceTracker = {}
@@ -25,6 +51,8 @@ class baseDet(object):
         self.frameCounter = 0
         self.currentCarID = 0
         self.recorded = []
+        self.is_label = True
+        self.label_id = None
 
         # self.font = cv2.FONT_HERSHEY_SIMPLEX
 
@@ -38,7 +66,7 @@ class baseDet(object):
         self.frameCounter += 1
 
         # im, faces, face_bboxes = update_tracker(self, im, self.frameCounter)
-        im, trackers = update_tracker(self, im, self.frameCounter)
+        im, trackers = update_tracker(self, im, self.frameCounter, self.is_label, self.label_id, self.deepsort)
 
         retDict['frame'] = im
         retDict['tracker'] = trackers
@@ -46,6 +74,10 @@ class baseDet(object):
         # retDict['face_bboxes'] = face_bboxes
 
         return retDict
+
+    def set_encryption_obj(self, label_id_):
+        self.is_label = False
+        self.label_id = label_id_
 
     def init_model(self):
         raise EOFError("Undefined model type.")
@@ -64,7 +96,7 @@ class Detector(baseDet):
         # self.init_model()
         self.build_config()
 
-    def init_model(self, weight: str = 'weights/yolov5x.pt', detect_type='object'):
+    def init_model(self, weight: str = 'weights/yolov5x-seg.pt', detect_type='segment'):
         self.detect_type = detect_type
         self.weights = weight
         self.device = '0' if torch.cuda.is_available() else 'cpu'
@@ -76,6 +108,7 @@ class Detector(baseDet):
         self.m = model
         self.names = model.module.names if hasattr(
             model, 'module') else model.names
+
 
     def preprocess(self, img):
 

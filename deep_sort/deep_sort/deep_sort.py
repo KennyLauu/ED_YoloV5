@@ -1,5 +1,15 @@
 import numpy as np
 import torch
+import os
+import sys
+from pathlib import Path
+
+
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[0]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
+ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from .deep.feature_extractor import Extractor
 from .sort.detection import Detection
@@ -16,6 +26,10 @@ class DeepSort(object):
         self.nms_max_overlap = nms_max_overlap
 
         self.extractor = Extractor(model_path, use_cuda=use_cuda)
+        self.max_dist = max_dist
+        self.max_iou_distance = max_iou_distance
+        self.max_age = max_age
+        self.n_init = n_init
 
         max_cosine_distance = max_dist
         nn_budget = 100
@@ -23,6 +37,14 @@ class DeepSort(object):
             "cosine", max_cosine_distance, nn_budget)
         self.tracker = Tracker(
             metric, max_iou_distance=max_iou_distance, max_age=max_age, n_init=n_init)
+
+    def update_tracker(self):
+        max_cosine_distance = self.max_dist
+        nn_budget = 100
+        metric = NearestNeighborDistanceMetric(
+            "cosine", max_cosine_distance, nn_budget)
+        self.tracker = Tracker(
+            metric, max_iou_distance=self.max_iou_distance, max_age=self.max_age, n_init=self.n_init)
 
     def update(self, bbox_xywh, confidences, clss, ori_img, frame_counter):
         self.height, self.width = ori_img.shape[:2]
@@ -46,8 +68,8 @@ class DeepSort(object):
 
         # 处理1，2，3帧无法加密的问题（即前3帧全用于匹配了）
         for track in self.tracker.tracks_save:
-            # if track.time_since_update == 0:
-            if not track.is_deleted():  # 改成这个是因为当物体突然消失，可能是被挡住了，不排除有再次出现的可能，但会导致正常消失的人物在视频中依旧被加密。
+            if track.time_since_update == 0:
+            # if not track.is_deleted():  # 改成这个是因为当物体突然消失，可能是被挡住了，不排除有再次出现的可能，但会导致正常消失的人物在视频中依旧被加密。
                 box = track.to_tlwh()
                 x1, y1, x2, y2 = self._tlwh_to_xyxy(box)
                 outputs.append((x1, y1, x2, y2, track.cls_, track.track_id, track.current_detect_index))

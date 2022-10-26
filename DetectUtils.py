@@ -13,6 +13,12 @@ def cv2whc(img):
     """
     return np.ascontiguousarray(img.transpose((1, 0, 2))[:, :, ::-1])
 
+def PIL2whc(img):
+    """
+    w h c
+    R G B
+    """
+    return np.ascontiguousarray(np.array(img).transpose((1, 0, 2)))
 
 def mask2xyxy(mask):
     index = np.argwhere(mask == 1)
@@ -30,7 +36,7 @@ def text2key(text):
     text = str.split(text, ',') if isinstance(text, str) else text
 
     assert isinstance(text, list), 'error text type, must be str or list'
-    assert len(text) == 4, 'error dimension, must be 4-dimension, shape=(4,)'
+    assert len(text) == 4, 'error dimension, must be 4-dimension, shape=(4,) {}'.format(len(text))
 
     # 将字符转换为数字
     text = np.array([int(val) for val in text])
@@ -119,7 +125,7 @@ def SetEncryptionImage(image_path, encryption_object=None,
                     int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3])
                 )
                 encryption_object_info_bytes = encryption_object_info.encode('ascii')
-                encryption_object_info_bytes += mask[:, :, 0:1].tobytes() if mask is not None else b' '
+                encryption_object_info_bytes += mask[:, :, 0:1].astype(np.uint8).tobytes() if mask is not None else b' '
                 encryption_object_info_bytes += b'],'
                 binary_img.write(encryption_object_info_bytes)
 
@@ -153,7 +159,7 @@ def GetEncryptionImageInfo(image_path):
 
 def EncryptionImage2Decryption(image_path, key=None):
     # 将字符串key转为np
-    key = text2key(key) if isinstance(key, str) else key
+    key = text2key(key) if isinstance(key, str) else np.array(key)
     # 获取图片中的掩码
     encryption_info = GetEncryptionImageInfo(image_path)
     encryption_objects = encryption_info['object']
@@ -474,7 +480,7 @@ def RoIEncryption(image, key, label: list = None, detect_type='object'):
 
 def SelectAreaEncryption(image, xyxy, key):
     assert len(xyxy) == 4, 'please make sure the xyxy is 4-dimension, xyxy必须是4维的'
-    assert xyxy[0] < xyxy[2] and xyxy[1] < xyxy[3], 'box position is error, must be left-top and right-bottom'
+    assert xyxy[0] < xyxy[2] and xyxy[1] < xyxy[3], 'box position is error, must be left-top and right-bottom {}'.format(xyxy)
 
     # ------------
     # 全局操作

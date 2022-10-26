@@ -19,7 +19,7 @@ def app():
     # ---- HEADER SECTION ----
 
     with st.container():
-        st.subheader("欢迎来到基于深度学习的加密系统")
+        st.subheader("欢迎来到基于YoloV5+DeepSort的智能影像加密系统")
         banner_img = """
                         <div id="banner"></div>
                 """
