@@ -1,8 +1,7 @@
 # ED_YoloV5
 demo
-<video width="320" height="240" controls>
-    <source src="./compare.mp4" type="video/mp4">
-</video>
+![demo](./compare.gif)
+
 
 Pytorch Yolo ImageEncryption  
 
